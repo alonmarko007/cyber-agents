@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>סוכני הסייבר — משחק בטיחות ברשת</title>
+<style>
+  :root{
+    --bg:#070b18;
+    --bg2:#0d1430;
+    --panel:rgba(18,26,54,.85);
+    --panel-solid:#121a36;
+    --ink:#eaf2ff;
+    --muted:#8fa0c8;
+    --cyan:#00e5ff;
+    --purple:#b388ff;
+    --green:#00e676;
+    --pink:#ff5c8a;
+    --yellow:#ffd54f;
+    --good:#00e676;
+    --bad:#ff4d6d;
+    --line:rgba(120,150,220,.25);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:'Segoe UI','Assistant','Arial Hebrew',system-ui,sans-serif;
+    background:
+      radial-gradient(1000px 600px at 80% -10%, rgba(0,229,255,.10), transparent 60%),
+      radial-gradient(900px 600px at 10% 110%, rgba(179,136,255,.12), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100%;
+    overflow-x:hidden;
+    -webkit-tap-highlight-color:transparent;
+  }
+  /* subtle animated grid backdrop */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.35;
+    background-image:linear-gradient(rgba(90,120,200,.08) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(90,120,200,.08) 1px,transparent 1px);
+    background-size:44px 44px;
+    mask:radial-gradient(circle at 50% 40%,#000,transparent 85%);
+  }
+  #app{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:14px 14px 40px;min-height:100%}
+  canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+
+  h1,h2,h3{margin:0}
+  .neon{text-shadow:0 0 8px currentColor,0 0 22px currentColor}
+  button{font-family:inherit;cursor:pointer;border:none;color:inherit}
+
+  /* ---------- HUD ---------- */
+  #hud{display:none;gap:10px;align-items:center;justify-content:space-between;
+       background:var(--panel);border:1px solid var(--line);border-radius:16px;
+       padding:10px 12px;backdrop-filter:blur(6px);margin-bottom:14px;flex-wrap:wrap}
+  .hud-rank{font-weight:800;font-size:14px;color:var(--cyan)}
+  .hud-rank small{display:block;color:var(--muted);font-weight:600;font-size:11px}
+  .hearts{font-size:20px;letter-spacing:2px;filter:drop-shadow(0 0 6px rgba(255,77,109,.6))}
+  .hud-score{font-weight:900;font-size:20px;color:var(--yellow)}
+  .hud-score small{font-size:11px;color:var(--muted);font-weight:700}
+  .xpwrap{flex:1 1 140px;min-width:120px}
+  .xpbar{height:10px;border-radius:99px;background:#0a1128;border:1px solid var(--line);overflow:hidden}
+  .xpfill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--purple));
+          box-shadow:0 0 12px var(--cyan);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+  .xplabel{font-size:10px;color:var(--muted);margin-top:3px;text-align:center}
+  #muteBtn{background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:16px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px;
+        backdrop-filter:blur(6px)}
+  .center{text-align:center}
+
+  /* ---------- Start screen ---------- */
+  .logo{font-size:clamp(30px,9vw,54px);font-weight:900;line-height:1.05;
+        background:linear-gradient(90deg,var(--cyan),var(--purple),var(--pink));
+        -webkit-background-clip:text;background-clip:text;color:transparent;
+        filter:drop-shadow(0 0 18px rgba(0,229,255,.35))}
+  .subtitle{color:var(--muted);margin-top:8px;font-weight:600}
+  .agent-emoji{font-size:64px;filter:drop-shadow(0 0 18px rgba(0,229,255,.5));animation:float 3s ease-in-out infinite}
+  @keyframes float{50%{transform:translateY(-10px)}}
+  input#nameInput{width:100%;margin-top:14px;padding:14px 16px;border-radius:14px;
+    background:#0a1128;border:1px solid var(--line);color:var(--ink);font-size:17px;text-align:center;font-weight:700}
+  input#nameInput:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.25)}
+  .btn{display:inline-block;padding:15px 26px;border-radius:16px;font-weight:900;font-size:18px;
+       background:linear-gradient(180deg,var(--cyan),#00a7c4);color:#04121a;
+       box-shadow:0 8px 0 #026277,0 10px 24px rgba(0,229,255,.35);transition:transform .06s,box-shadow .06s}
+  .btn:active{transform:translateY(5px);box-shadow:0 3px 0 #026277,0 6px 14px rgba(0,229,255,.3)}
+  .btn.big{width:100%;margin-top:16px;font-size:20px}
+  .btn.ghost{background:#0e1738;color:var(--ink);box-shadow:0 6px 0 #060c22;border:1px solid var(--line)}
+  .btn.ghost:active{box-shadow:0 2px 0 #060c22}
+  .hint{color:var(--muted);font-size:12px;margin-top:12px}
+  .tag{display:inline-block;font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;
+       background:#0a1128;border:1px solid var(--line);color:var(--muted);margin:3px}
+
+  /* ---------- Map ---------- */
+  .map-title{text-align:center;margin-bottom:6px}
+  .map{position:relative;margin-top:16px}
+  .station{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);
+    border-radius:20px;padding:14px 16px;margin:0 0 16px;position:relative;transition:transform .1s;
+    border-inline-start:6px solid var(--c)}
+  .station.playable{cursor:pointer;box-shadow:0 0 0 1px var(--c),0 0 26px -6px var(--c)}
+  .station.playable:active{transform:scale(.98)}
+  .station.locked{opacity:.5;filter:grayscale(.4)}
+  .station.done{}
+  .st-emoji{font-size:38px;width:60px;height:60px;flex:0 0 60px;display:grid;place-items:center;
+    background:#0a1128;border-radius:16px;border:1px solid var(--line)}
+  .st-body{flex:1;min-width:0}
+  .st-body h3{font-size:17px;color:var(--c)}
+  .st-body p{margin:3px 0 0;color:var(--muted);font-size:13px}
+  .st-badge{font-size:30px;filter:drop-shadow(0 0 8px var(--c))}
+  .st-lock{font-size:22px;color:var(--muted)}
+  .st-play{font-weight:900;color:var(--c);font-size:14px;white-space:nowrap}
+  .connector{position:absolute;inset-inline-start:44px;width:3px;background:
+     repeating-linear-gradient(var(--line),var(--line) 6px,transparent 6px,transparent 12px);z-index:-1}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 1px var(--c),0 0 26px -6px var(--c)}
+                   50%{box-shadow:0 0 0 2px var(--c),0 0 34px 0px var(--c)}}
+  .station.next{animation:pulse 1.6s infinite}
+
+  /* ---------- Challenge ---------- */
+  .chip{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:13px;
+        padding:6px 12px;border-radius:99px;background:#0a1128;border:1px solid var(--c);color:var(--c)}
+  .dots{display:flex;gap:6px;justify-content:center;margin:14px 0}
+  .dot{width:10px;height:10px;border-radius:50%;background:#1a2547;border:1px solid var(--line)}
+  .dot.on{background:var(--c);box-shadow:0 0 8px var(--c)}
+  .dot.cur{transform:scale(1.4)}
+  .scenario{font-size:19px;font-weight:700;line-height:1.5;margin:6px 0 4px}
+  .prompt{color:var(--muted);font-weight:700;font-size:14px;margin-bottom:12px}
+  .options{display:flex;flex-direction:column;gap:12px}
+  .opt{width:100%;text-align:start;padding:16px 18px;border-radius:16px;font-size:17px;font-weight:700;
+    background:#0e1738;border:2px solid var(--line);transition:transform .06s,border-color .1s,background .1s}
+  .opt:hover{border-color:var(--c)}
+  .opt:active{transform:scale(.99)}
+  .opt.correct{border-color:var(--good);background:rgba(0,230,118,.14);box-shadow:0 0 20px -6px var(--good)}
+  .opt.wrong{border-color:var(--bad);background:rgba(255,77,109,.14);animation:shake .35s}
+  .opt.dim{opacity:.5}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}60%{transform:translateX(8px)}}
+
+  .feedback{margin-top:16px;border-radius:16px;padding:16px;border:1px solid var(--line);animation:rise .3s}
+  .feedback.good{background:rgba(0,230,118,.10);border-color:var(--good)}
+  .feedback.bad{background:rgba(255,77,109,.10);border-color:var(--bad)}
+  .feedback .fb-title{font-weight:900;font-size:18px;margin-bottom:6px}
+  .feedback.good .fb-title{color:var(--good)}
+  .feedback.bad .fb-title{color:var(--bad)}
+  .feedback .fb-text{line-height:1.5;color:var(--ink);font-size:15px}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* ---------- Sort mini-game ---------- */
+  .sort-items{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0 6px;min-height:20px}
+  .sort-instr{color:var(--muted);font-size:13px;text-align:center;margin-bottom:6px}
+  .item{padding:11px 15px;border-radius:14px;background:#0e1738;border:2px solid var(--line);
+        font-weight:800;font-size:15px;transition:transform .08s}
+  .item:active{transform:scale(.96)}
+  .item.selected{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(255,213,79,.3);color:var(--yellow)}
+  .item.ok{border-color:var(--good);background:rgba(0,230,118,.15)}
+  .item.no{border-color:var(--bad);background:rgba(255,77,109,.15);animation:shake .35s}
+  .bins{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  .bin{background:#0a1128;border:2px dashed var(--line);border-radius:18px;padding:12px;min-height:120px}
+  .bin.armed{border-color:var(--yellow);box-shadow:0 0 18px -4px var(--yellow)}
+  .bin h4{margin:0 0 10px;text-align:center;font-size:15px}
+  .bin .drop{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  .binL h4{color:var(--good)} .binR h4{color:var(--bad)}
+
+  /* ---------- Station complete / certificate ---------- */
+  .badge-pop{font-size:96px;animation:pop .5s cubic-bezier(.2,1.4,.4,1);filter:drop-shadow(0 0 22px var(--c))}
+  @keyframes pop{from{transform:scale(0) rotate(-25deg)}to{transform:scale(1)}}
+  .cert{border:3px solid var(--yellow);border-radius:24px;padding:26px 20px;text-align:center;
+        background:radial-gradient(circle at 50% 0%,rgba(255,213,79,.14),transparent 70%),var(--panel-solid);
+        box-shadow:0 0 40px -8px var(--yellow)}
+  .cert .seal{font-size:64px;filter:drop-shadow(0 0 16px var(--yellow))}
+  .cert .name{font-size:30px;font-weight:900;color:var(--yellow);margin:8px 0}
+  .cert .badges{font-size:34px;letter-spacing:6px;margin:14px 0}
+  .stat-row{display:flex;gap:12px;justify-content:center;margin:14px 0;flex-wrap:wrap}
+  .stat{background:#0a1128;border:1px solid var(--line);border-radius:14px;padding:10px 18px;min-width:90px}
+  .stat b{display:block;font-size:26px;color:var(--cyan)}
+  .stat span{font-size:12px;color:var(--muted)}
+
+  .fade{animation:fade .35s}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div id="app">
+  <div id="hud">
+    <div class="hud-rank" id="hudRank">מתלמד/ת<small>סוכני הסייבר</small></div>
+    <div class="hearts" id="hudHearts">❤️❤️❤️</div>
+    <div class="xpwrap">
+      <div class="xpbar"><div class="xpfill" id="xpFill"></div></div>
+      <div class="xplabel" id="xpLabel">0 / 22 משימות</div>
+    </div>
+    <div class="hud-score"><span id="hudScore">0</span><small> נק'</small></div>
+    <button id="muteBtn" title="צליל">🔊</button>
+  </div>
+  <div id="screen"></div>
+</div>
+
+<script>
+/* ============================================================
+   סוכני הסייבר — משחק בטיחות ברשת (קובץ עצמאי אחד)
+   כל הנתונים נשמרים מקומית בלבד (localStorage). אין שרת ואין איסוף מידע.
+   ============================================================ */
+
+const STATIONS = [
+  {
+    id:'pass', title:'עולם הסיסמאות', emoji:'🔒', color:'var(--cyan)', badge:'🔑',
+    badgeName:'מומחה/ית סיסמאות',
+    challenges:[
+      { type:'quiz',
+        text:'איזו סיסמה הכי חזקה?',
+        prompt:'בחר/י את התשובה הנכונה',
+        options:['1234','יוסי2015','Dag$Kachol7!','password'], answer:2,
+        explain:'סיסמה חזקה היא ארוכה, מערבבת אותיות גדולות/קטנות, מספרים וסימנים — ולא מכילה פרטים שקל לנחש כמו שם או שנת לידה.' },
+      { type:'sort',
+        text:'גרור ומיין: חזקה או חלשה?',
+        binL:'חזקה 💪', binR:'חלשה 😴',
+        items:[
+          {t:'123456',bin:1},{t:'aA9!kLm2#',bin:0},
+          {t:'noa2016',bin:1},{t:'Tapu@ch8Yarok',bin:0}
+        ],
+        explain:'סיסמאות קצרות או שמבוססות על שם/תאריך קל מאוד לפצח. ערבוב של סוגי תווים ואורך = חוזק.' },
+      { type:'quiz',
+        text:'חבר טוב מבקש את הסיסמה למשחק שלך כדי "לעזור לך לעבור שלב". מה תעשה?',
+        prompt:'מה הכי נכון?',
+        options:['אתן לו, הוא חבר','אתן ואחליף אחר כך','לא משתפים סיסמה — גם לא עם חברים'], answer:2,
+        explain:'סיסמה היא סוד אישי. גם חבר טוב יכול לשכוח להתנתק, או לשתף בטעות. הכלל פשוט: הסיסמה נשארת רק אצלך.' },
+      { type:'quiz',
+        text:'אתה נרשם לאתר חדש. מה הכי נכון לעשות עם הסיסמה?',
+        prompt:'בחר/י תשובה',
+        options:['להשתמש באותה סיסמה שיש לי בכל מקום','להשתמש בתאריך הלידה שלי','ליצור סיסמה חדשה וארוכה, שונה מהאחרות'], answer:2,
+        explain:'אם משתמשים באותה סיסמה בכל מקום ואחד האתרים נפרץ — כל החשבונות בסכנה. לכל מקום חשובה סיסמה משלו.' }
+    ]
+  },
+  {
+    id:'strangers', title:'עולם הזרים', emoji:'🕵️', color:'var(--purple)', badge:'🛰️',
+    badgeName:'שומר/ת מפני זרים',
+    challenges:[
+      { type:'quiz',
+        text:'במשחק מקוון מישהו שאתה לא מכיר כותב: "אתה משחק מדהים! איך קוראים לך ובאיזו עיר אתה גר?"',
+        prompt:'מה תעשה?',
+        options:['אענה, הוא נחמד','אתן רק את השם','לא משתף פרטים אישיים עם זרים — ואפשר פשוט לא לענות'], answer:2,
+        explain:'אנשים ברשת יכולים להעמיד פנים שהם מישהו אחר. פרטים כמו שם מלא ועיר עוזרים לזר למצוא אותך במציאות. מותר להגיד "לא".' },
+      { type:'quiz',
+        text:'מישהו שהכרת רק באינטרנט מציע להיפגש פנים-אל-פנים או בשיחת וידאו.',
+        prompt:'מה תעשה?',
+        options:['אלך, דיברנו הרבה','אפגש רק אם זה קרוב לבית','מספר למבוגר שאני סומך עליו, ולא נפגש בלי ליווי'], answer:2,
+        explain:'אדם שהכרת רק ברשת הוא עדיין זר, גם אם דיברתם הרבה. פגישה צריכה תמיד לעבור דרך הורה או מבוגר אחראי.' },
+      { type:'quiz',
+        text:'מגיעה בקשת חברות מפרופיל של "ילד" שאתה לא מכיר במציאות.',
+        prompt:'מה תעשה?',
+        options:['אאשר, יש לו תמונה של ילד','אאשר כדי שיהיו לי יותר חברים','לא מאשר אנשים שאני לא מכיר באמת'], answer:2,
+        explain:'קל לשים תמונה של ילד בפרופיל — זה לא אומר שזה באמת ילד. מאשרים רק אנשים שמכירים במציאות.' },
+      { type:'quiz',
+        text:'מישהו ברשת אומר לך: "אל תספר להורים שלך, זה סוד קטן בינינו."',
+        prompt:'מה תעשה?',
+        options:['אשמור סוד, הבטחתי','אחליט לפי מה שהוא יבקש','מספר מיד להורה — סוד שאסור לספר להורים זה סימן אזהרה'], answer:2,
+        explain:'אדם שמבקש להסתיר דברים מההורים — זה דגל אדום. תמיד מותר ותמיד נכון לספר להורה שאתה סומך עליו.' }
+    ]
+  },
+  {
+    id:'info', title:'עולם המידע האישי', emoji:'🛡️', color:'var(--green)', badge:'🧾',
+    badgeName:'שומר/ת הפרטיות',
+    challenges:[
+      { type:'sort',
+        text:'גרור ומיין: מה מותר לשתף בפרופיל ציבורי?',
+        binL:'מותר לשתף ✅', binR:'שומרים לעצמנו 🤐',
+        items:[
+          {t:'כינוי במשחק',bin:0},{t:'כתובת הבית',bin:1},
+          {t:'מאכל אהוב',bin:0},{t:'שם בית הספר',bin:1},
+          {t:'מספר טלפון',bin:1},{t:'צבע אהוב',bin:0}
+        ],
+        explain:'דברים על טעם אישי בטוחים לשיתוף. פרטים שעוזרים למצוא אותך במציאות — כתובת, טלפון, בית ספר — נשארים פרטיים.' },
+      { type:'quiz',
+        text:'משחק מבקש שם מלא, כתובת ומספר טלפון כדי "לשלוח לך פרס".',
+        prompt:'מה תעשה?',
+        options:['אמלא, אני רוצה את הפרס','אמלא רק את השם','לא ממלא ומספר להורה — כנראה שזה לא אמיתי'], answer:2,
+        explain:'משחקים אמיתיים לא צריכים את הכתובת והטלפון שלך בשביל פרס. בקשה כזאת היא לרוב ניסיון לאסוף מידע. מראים להורה.' },
+      { type:'quiz',
+        text:'אתה רוצה להעלות תמונה. איזו תמונה הכי בעייתי לשתף בפומבי?',
+        prompt:'בחר/י תשובה',
+        options:['תמונה של הכלב שלך','תמונה של ציור שציירת','תמונה שרואים בה את חולצת בית הספר ומספר הבית'], answer:2,
+        explain:'תמונה יכולה לחשוף בלי כוונה איפה אתה גר או לומד. לפני שמשתפים — בודקים מה עוד נראה ברקע.' },
+      { type:'quiz',
+        text:'בפרופיל שלך יש הגדרה של "שיתוף מיקום". מה הכי נכון?',
+        prompt:'בחר/י תשובה',
+        options:['להשאיר דלוק, זה נוח','להדליק רק בסופ"ש','לכבות — לא צריך שכולם יידעו איפה אני נמצא'], answer:2,
+        explain:'שיתוף מיקום מראה לזרים בדיוק איפה אתה. עדיף לכבות, ולהדליק רק אם הורה מאשר ולמטרה מסוימת.' }
+    ]
+  },
+  {
+    id:'bully', title:'עולם הבריונות', emoji:'💬', color:'var(--pink)', badge:'🤝',
+    badgeName:'חבר/ה אמיץ/ה',
+    challenges:[
+      { type:'quiz',
+        text:'ילד מהכיתה כתב תגובה פוגענית מתחת לתמונה שלך.',
+        prompt:'מה הכי נכון לעשות?',
+        options:['להגיב לו משהו מרושע בחזרה','למחוק את החשבון','לא להגיב, לצלם מסך כהוכחה, ולספר למבוגר שאני סומך עליו'], answer:2,
+        explain:'תגובה מרושעת בחזרה רק מסלימה. שמירת הוכחה (צילום מסך) וסיפור למבוגר הם הדרך החזקה והבטוחה להתמודד.' },
+      { type:'quiz',
+        text:'בקבוצה אתה רואה שילד אחר סופג הצקות מכולם.',
+        prompt:'מה תעשה?',
+        options:['אצטרף, כולם עושים את זה','אתעלם, זה לא ענייני','לא מצטרף, תומך בילד, ומדווח/מספר למבוגר'], answer:2,
+        explain:'מי שרואה ולא משתתף בהצקה כבר עוזר. עוד יותר עוזר לתמוך בנפגע ולספר למבוגר. זה מה שעושה "עד אמיץ".' },
+      { type:'quiz',
+        text:'מישהו פתח קבוצה שכל מטרתה לצחוק על ילד מסוים, ומזמין אותך להצטרף.',
+        prompt:'מה תעשה?',
+        options:['אצטרף, נשמע מצחיק','אצטרף אבל לא אכתוב כלום','לא מצטרף — קבוצה שנועדה לפגוע היא בריונות'], answer:2,
+        explain:'גם "רק לצפות" בקבוצה כזו נותן לה כוח. הדבר הנכון הוא לא להצטרף, ואפשר גם לספר למבוגר.' },
+      { type:'quiz',
+        text:'כעסת על מישהו ובא לך לכתוב עליו משהו פוגעני ברשת.',
+        prompt:'מה הכי נכון?',
+        options:['לכתוב, מגיע לו','לכתוב ואז למחוק','לעצור ולא לפרסם — מילים ברשת פוגעות ונשארות'], answer:2,
+        explain:'מה שכותבים ברשת יכול להישאר ולהתפשט גם אחרי מחיקה. כשכועסים — עוצרים רגע ונושמים לפני שכותבים.' },
+      { type:'quiz',
+        text:'חבר שולח לך צילום מסך מביך של ילד אחר ומבקש שתעביר הלאה לכולם.',
+        prompt:'מה תעשה?',
+        options:['אעביר, זה מצחיק','אעביר רק לחבר אחד','לא מעביר — הפצת דבר מביך על מישהו היא פגיעה'], answer:2,
+        explain:'העברת תוכן מביך על מישהו פוגעת בו בדיוק כמו לכתוב אותו בעצמך. הכי נכון לעצור את השרשרת ולא להעביר.' }
+    ]
+  },
+  {
+    id:'links', title:'עולם ההודעות והקישורים המפוקפקים', emoji:'🎣', color:'var(--yellow)', badge:'🧭',
+    badgeName:'צייד/ת התרמיות',
+    challenges:[
+      { type:'quiz',
+        text:'מגיעה הודעה: "מזל טוב! זכית באייפון! לחץ כאן לקבלת הפרס 🎁".',
+        prompt:'מה תעשה?',
+        options:['אלחץ, אולי באמת זכיתי','אלחץ רק כדי לבדוק','לא לוחץ — הודעות "זכית!" הן כמעט תמיד תרמית'], answer:2,
+        explain:'אף אחד לא מחלק פרסים יקרים בהודעה אקראית. קישורים כאלה מנסים לגנוב מידע. לא לוחצים, ומראים להורה.' },
+      { type:'quiz',
+        text:'מגיעה הודעה: "לחץ כאן כדי לאמת את הסיסמה שלך, אחרת החשבון ייחסם."',
+        prompt:'מה תעשה?',
+        options:['אלחץ ואכניס סיסמה מהר','אלחץ אבל לא אכניס כלום','לא לוחץ — שירות אמיתי לא מבקש סיסמה ככה, ומספר להורה'], answer:2,
+        explain:'אתרים אמיתיים לא מבקשים ממך "לאמת סיסמה" דרך קישור בהודעה. זה ניסיון לגנוב אותה (פישינג).' },
+      { type:'sort',
+        text:'גרור ומיין: בטוח או חשוד?',
+        binL:'בטוח 👍', binR:'חשוד ⚠️',
+        items:[
+          {t:'עדכון אפליקציה מתוך האפליקציה עצמה',bin:0},
+          {t:'"שלח כתובת ונשלח לך כסף"',bin:1},
+          {t:'קובץ לא מוכר שצורף מזר',bin:1},
+          {t:'הודעה מחבר אמיתי על שיעורי בית',bin:0}
+        ],
+        explain:'דברים ממקור מוכר ומצופה = בטוחים. הבטחות של כסף/פרסים וקבצים מזרים = חשודים. בספק — שואלים מבוגר.' },
+      { type:'quiz',
+        text:'קופץ במסך חלון: "המחשב שלך נגוע בוירוס! התקשר עכשיו למספר הזה!"',
+        prompt:'מה תעשה?',
+        options:['אתקשר מהר, זה מפחיד','אלחץ על החלון כדי לסגור וירוס','לא מתקשר ולא לוחץ — זה חלון מזויף, ומספר להורה'], answer:2,
+        explain:'חלונות שמפחידים ודורשים להתקשר "עכשיו" הם תרמית. מחשב אמיתי לא מבקש ממך להתקשר למספר. סוגרים ומספרים למבוגר.' },
+      { type:'quiz',
+        text:'אתר לא מוכר מציע משחק חינם, אבל לפני ההורדה מבקש להתקין "תוכנה נוספת".',
+        prompt:'מה תעשה?',
+        options:['אתקין הכול, אני רוצה את המשחק','אתקין רק את המשחק','לא מוריד מאתר לא מוכר — עדיף לשאול הורה'], answer:2,
+        explain:'תוכנות "נוספות" מאתרים לא מוכרים יכולות להיות וירוסים. מורידים משחקים רק מחנויות רשמיות, ובאישור הורה.' }
+    ]
+  }
+];
+
+const RANKS = ['מתלמד/ת','סוכן/ת זוטר/ה','סוכן/ת','סוכן/ת מנוסה','סוכן/ת בכיר/ה','סוכן/ת על 🏆'];
+const TOTAL = STATIONS.reduce((n,s)=>n+s.challenges.length,0);
+const LIVES = 3;
+const SAVE_KEY = 'cyberAgentsSave';
+
+let S = { name:'', score:0, done:[], muted:false };
+let cur = null; // {si, ci, lives, firstTry}
+
+const $ = s=>document.querySelector(s);
+const screen = $('#screen');
+const hud = $('#hud');
+
+/* ---------- persistence (local only) ---------- */
+function load(){ try{ const d=JSON.parse(localStorage.getItem(SAVE_KEY)); if(d){S=Object.assign(S,d);} }catch(e){} }
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted})); }catch(e){} }
+load();
+
+/* ---------- sound (Web Audio, generated) ---------- */
+let actx=null;
+function ac(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+function tone(freq,dur,type='sine',vol=.18,when=0){
+  if(S.muted) return; const c=ac(); if(!c) return;
+  const o=c.createOscillator(), g=c.createGain(), t=c.currentTime+when;
+  o.type=type; o.frequency.setValueAtTime(freq,t);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.02);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+.02);
+}
+const sfx={
+  click:()=>tone(320,.06,'square',.08),
+  correct:()=>{tone(660,.12,'triangle',.16,0);tone(880,.16,'triangle',.16,.1);tone(1180,.22,'triangle',.16,.2);},
+  wrong:()=>{tone(200,.18,'sawtooth',.12,0);tone(150,.22,'sawtooth',.12,.12);},
+  badge:()=>{[523,659,784,1046].forEach((f,i)=>tone(f,.25,'triangle',.16,i*.12));},
+  win:()=>{[523,659,784,1046,1318].forEach((f,i)=>tone(f,.3,'triangle',.17,i*.13));}
+};
+
+/* ---------- HUD ---------- */
+function rankIndex(){ return S.done.length; }
+function updateHUD(){
+  hud.style.display='flex';
+  $('#hudScore').textContent=S.score;
+  $('#hudRank').innerHTML = RANKS[rankIndex()] + '<small>סוכני הסייבר</small>';
+  const doneCount = countDone();
+  $('#xpFill').style.width = (doneCount/TOTAL*100)+'%';
+  $('#xpLabel').textContent = doneCount+' / '+TOTAL+' משימות';
+  $('#muteBtn').textContent = S.muted ? '🔇' : '🔊';
+  if(cur){ $('#hudHearts').textContent = '❤️'.repeat(cur.lives)+'🖤'.repeat(LIVES-cur.lives); $('#hudHearts').style.visibility='visible'; }
+  else { $('#hudHearts').style.visibility='hidden'; }
+}
+function countDone(){
+  // completed challenges = all challenges in finished stations + current progress
+  let n=0; S.done.forEach(id=>{ const st=STATIONS.find(s=>s.id===id); if(st)n+=st.challenges.length; });
+  if(cur && !S.done.includes(STATIONS[cur.si].id)) n+=cur.ci;
+  return n;
+}
+$('#muteBtn').onclick=()=>{ S.muted=!S.muted; save(); updateHUD(); if(!S.muted) sfx.click(); };
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+function go(html){ screen.innerHTML=html; screen.classList.remove('fade'); void screen.offsetWidth; screen.classList.add('fade'); }
+
+/* ----- Start ----- */
+function startScreen(){
+  cur=null; updateHUD(); hud.style.display='none';
+  const finishedAll = S.done.length===STATIONS.length;
+  go(`
+    <div class="card center">
+      <div class="agent-emoji">🕵️‍♂️</div>
+      <h1 class="logo">סוֹכְנֵי הַסַּיְבֶּר</h1>
+      <div class="subtitle">משחק הבטיחות ברשת · לגיל 10</div>
+      <div style="margin-top:10px">
+        <span class="tag">🔒 סיסמאות</span><span class="tag">🕵️ זרים</span>
+        <span class="tag">🛡️ מידע אישי</span><span class="tag">💬 בריונות</span>
+        <span class="tag">🎣 קישורים חשודים</span>
+      </div>
+      <input id="nameInput" maxlength="16" placeholder="איך קוראים לך, סוכן/ת?" value="${escapeHtml(S.name)}" />
+      <button class="btn big" id="startBtn">${S.done.length? 'המשך משימה ▶':'התחל משימה ▶'}</button>
+      ${S.done.length? `<button class="btn ghost big" id="resetBtn" style="margin-top:10px">התחל מחדש 🔄</button>`:''}
+      <div class="hint">🔐 השם נשמר רק במכשיר שלך ולא נשלח לאף אחד.</div>
+    </div>
+  `);
+  $('#startBtn').onclick=()=>{
+    const v=$('#nameInput').value.trim();
+    S.name = v || 'סוכן/ת'; save(); sfx.click(); mapScreen();
+  };
+  const rb=$('#resetBtn'); if(rb) rb.onclick=()=>{ if(confirm('להתחיל את כל המשחק מחדש?')){ S.score=0;S.done=[];save();sfx.click();startScreen(); } };
+}
+
+/* ----- Map ----- */
+function firstIncomplete(){ for(let i=0;i<STATIONS.length;i++){ if(!S.done.includes(STATIONS[i].id)) return i; } return -1; }
+function mapScreen(){
+  cur=null; updateHUD();
+  const nextIdx=firstIncomplete();
+  let nodes='';
+  STATIONS.forEach((st,i)=>{
+    const done=S.done.includes(st.id);
+    const playable = !done && i===nextIdx;      // sequential unlock
+    const locked = !done && !playable;
+    let right='';
+    if(done) right=`<div class="st-badge">${st.badge}</div>`;
+    else if(playable) right=`<div class="st-play">שחק ▶</div>`;
+    else right=`<div class="st-lock">🔒</div>`;
+    nodes += `
+      <div class="station ${done?'done':''} ${playable?'playable next':''} ${locked?'locked':''}"
+           style="--c:${st.color}" data-i="${i}">
+        <div class="st-emoji">${st.emoji}</div>
+        <div class="st-body">
+          <h3>${st.title}</h3>
+          <p>${done? '✔ הושלם · '+st.badgeName : (playable?'התחנה הבאה שלך':'ננעל — סיים/י את הקודמת')}</p>
+        </div>
+        ${right}
+      </div>`;
+  });
+  const allDone = S.done.length===STATIONS.length;
+  go(`
+    <div class="map-title">
+      <div class="chip" style="--c:var(--cyan)">🗺️ מפת המשימות</div>
+      <h2 style="margin-top:10px">שלום, <span style="color:var(--cyan)">${escapeHtml(S.name)}</span> 👋</h2>
+      <p class="subtitle">${allDone?'סיימת את כל התחנות! קבל/י את התעודה 🎖️':'עבור/י תחנה־תחנה והפוך/הפכי לסוכן/ת מוסמך/ת'}</p>
+    </div>
+    <div class="map">${nodes}</div>
+    ${allDone? `<button class="btn big" id="certBtn">🎖️ לתעודת הסוכן/ת</button>`:''}
+  `);
+  document.querySelectorAll('.station.playable').forEach(el=>{
+    el.onclick=()=>{ sfx.click(); startStation(+el.dataset.i); };
+  });
+  const cb=$('#certBtn'); if(cb) cb.onclick=()=>{ sfx.click(); certScreen(); };
+}
+
+/* ----- Station flow ----- */
+function startStation(si){ cur={si,ci:0,lives:LIVES,firstTry:true}; renderChallenge(); }
+
+function renderChallenge(){
+  const st=STATIONS[cur.si], ch=st.challenges[cur.ci];
+  cur.firstTry=true; updateHUD();
+  const dots=st.challenges.map((_,i)=>`<div class="dot ${i<cur.ci?'on':''} ${i===cur.ci?'cur on':''}" style="--c:${st.color}"></div>`).join('');
+  const head=`
+    <div class="center"><div class="chip" style="--c:${st.color}">${st.emoji} ${st.title}</div></div>
+    <div class="dots">${dots}</div>`;
+  if(ch.type==='quiz') renderQuiz(st,ch,head);
+  else renderSort(st,ch,head);
+}
+
+function renderQuiz(st,ch,head){
+  const opts=ch.options.map((o,i)=>`<button class="opt" data-i="${i}" style="--c:${st.color}">${o}</button>`).join('');
+  go(`<div class="card" style="--c:${st.color}">
+        ${head}
+        <div class="scenario">${ch.text}</div>
+        <div class="prompt">${ch.prompt||''}</div>
+        <div class="options" id="opts">${opts}</div>
+        <div id="fb"></div>
+      </div>`);
+  document.querySelectorAll('#opts .opt').forEach(b=>{
+    b.onclick=()=>answerQuiz(+b.dataset.i, st, ch);
+  });
+}
+function answerQuiz(i, st, ch){
+  const correct = i===ch.answer;
+  const btns=document.querySelectorAll('#opts .opt');
+  if(correct){
+    btns.forEach((b,bi)=>{ b.disabled=true; if(bi===i)b.classList.add('correct'); else b.classList.add('dim'); });
+    sfx.correct();
+    awardCorrect(st,ch);
+  } else {
+    const b=btns[i]; b.classList.add('wrong');
+    cur.lives--; cur.firstTry=false; sfx.wrong(); updateHUD();
+    showFeedback(false, ch.explain, ()=>{
+      b.classList.remove('wrong');
+      if(cur.lives<=0){ stationFailed(st); }
+      // else: let them try again on same question
+    });
+  }
+}
+
+/* ----- Sort mini-game (tap to place — works with touch & mouse) ----- */
+function renderSort(st,ch,head){
+  // shuffle a working copy
+  const items=ch.items.map((it,idx)=>({...it,idx,placed:null}));
+  shuffle(items);
+  cur._sort={items,selected:null};
+  go(`<div class="card" style="--c:${st.color}">
+        ${head}
+        <div class="scenario">${ch.text}</div>
+        <div class="sort-instr">הקש/י על פריט ואז על התיבה הנכונה 👇</div>
+        <div class="sort-items" id="pool"></div>
+        <div class="bins">
+          <div class="bin binL" data-bin="0"><h4>${ch.binL}</h4><div class="drop" id="d0"></div></div>
+          <div class="bin binR" data-bin="1"><h4>${ch.binR}</h4><div class="drop" id="d1"></div></div>
+        </div>
+        <button class="btn big" id="checkBtn" style="margin-top:16px" disabled>בדוק/י ✔</button>
+        <div id="fb"></div>
+      </div>`);
+  document.querySelectorAll('.bin').forEach(bin=> bin.onclick=()=>placeSelected(+bin.dataset.bin, st, ch));
+  $('#checkBtn').onclick=()=>checkSort(st,ch);
+  drawSort(st);
+}
+function drawSort(st){
+  const {items,selected}=cur._sort;
+  const pool=$('#pool'); pool.innerHTML='';
+  $('#d0').innerHTML=''; $('#d1').innerHTML='';
+  items.forEach(it=>{
+    const el=document.createElement('button');
+    el.className='item'+(selected===it.idx?' selected':'');
+    el.style.setProperty('--c',st.color);
+    el.textContent=it.t;
+    el.onclick=(e)=>{ e.stopPropagation(); selectItem(it.idx, st); };
+    if(it.placed===null) pool.appendChild(el);
+    else $('#d'+it.placed).appendChild(el);
+  });
+  // arm bins if an item is selected
+  document.querySelectorAll('.bin').forEach(b=> b.classList.toggle('armed', selected!==null));
+  const allPlaced=items.every(it=>it.placed!==null);
+  $('#checkBtn').disabled=!allPlaced;
+  updateHUD();
+}
+function selectItem(idx, st){ cur._sort.selected = (cur._sort.selected===idx?null:idx); sfx.click(); drawSort(st); }
+function placeSelected(bin, st){
+  const s=cur._sort; if(s.selected===null) return;
+  const it=s.items.find(i=>i.idx===s.selected); it.placed=bin; s.selected=null; sfx.click(); drawSort(st);
+}
+function checkSort(st,ch){
+  const {items}=cur._sort;
+  const wrongEls=[]; let allOk=true;
+  const nodes=document.querySelectorAll('.item');
+  items.forEach(it=>{
+    const ok = it.placed===it.bin;
+    if(!ok){ allOk=false; }
+  });
+  // mark visually
+  document.querySelectorAll('#d0 .item,#d1 .item').forEach(el=>{
+    const it=items.find(i=>i.t===el.textContent);
+    if(it){ el.classList.remove('ok','no'); el.classList.add(it.placed===it.bin?'ok':'no'); }
+  });
+  if(allOk){
+    sfx.correct(); $('#checkBtn').disabled=true;
+    awardCorrect(st,ch);
+  } else {
+    cur.lives--; cur.firstTry=false; sfx.wrong(); updateHUD();
+    showFeedback(false, ch.explain+' נסה/י לסדר מחדש את הפריטים המסומנים באדום.', ()=>{
+      if(cur.lives<=0){ stationFailed(st); return; }
+      // reset only the wrong ones back to pool for another try
+      items.forEach(it=>{ if(it.placed!==it.bin) it.placed=null; });
+      cur._sort.selected=null; drawSort(st);
+    });
+  }
+}
+
+/* ----- shared correct / feedback / progression ----- */
+function awardCorrect(st,ch){
+  const pts = cur.firstTry?10:5; S.score+=pts; save(); updateHUD();
+  showFeedback(true, ch.explain, ()=>nextChallenge(st), pts);
+}
+function showFeedback(good, text, onNext, pts){
+  const fb=$('#fb');
+  fb.innerHTML=`
+    <div class="feedback ${good?'good':'bad'}">
+      <div class="fb-title">${good?('נכון! +'+pts+' נק\' 🎉'):'לא מדויק 💡'}</div>
+      <div class="fb-text">${text}</div>
+      <button class="btn big" id="nextBtn" style="margin-top:14px">${good?'המשך ▶':'נסה/י שוב 🔁'}</button>
+    </div>`;
+  fb.scrollIntoView({behavior:'smooth',block:'nearest'});
+  $('#nextBtn').onclick=()=>{ sfx.click(); onNext(); };
+}
+function nextChallenge(st){
+  cur.ci++;
+  if(cur.ci>=st.challenges.length) stationComplete(st);
+  else renderChallenge();
+}
+function stationFailed(st){
+  go(`<div class="card center" style="--c:${st.color}">
+        <div style="font-size:70px">💔</div>
+        <h2 style="color:var(--bad)">נגמרו החיים בתחנה זו</h2>
+        <p class="subtitle">זה בסדר גמור — סוכנים לומדים מניסיון! ננסה את התחנה שוב מההתחלה.</p>
+        <div class="chip" style="--c:${st.color};margin-top:12px">${st.emoji} ${st.title}</div>
+        <button class="btn big" id="retryBtn">נסה/י את התחנה שוב 🔁</button>
+        <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
+      </div>`);
+  $('#retryBtn').onclick=()=>{ sfx.click(); startStation(cur.si); };
+  $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
+}
+function stationComplete(st){
+  if(!S.done.includes(st.id)){ S.done.push(st.id); }
+  cur=null; save(); updateHUD(); sfx.badge(); burst(st.color);
+  const allDone=S.done.length===STATIONS.length;
+  go(`<div class="card center" style="--c:${st.color}">
+        <div class="badge-pop">${st.badge}</div>
+        <h2 style="color:${st.color};margin-top:8px" class="neon">תג הושג!</h2>
+        <div style="font-size:20px;font-weight:800;margin-top:6px">${st.badgeName}</div>
+        <p class="subtitle">סיימת את «${st.title}». כל הכבוד, סוכן/ת!</p>
+        <div class="stat-row">
+          <div class="stat"><b>${S.score}</b><span>נקודות</span></div>
+          <div class="stat"><b>${S.done.length}/5</b><span>תגים</span></div>
+        </div>
+        <button class="btn big" id="contBtn">${allDone?'🎖️ לתעודה הסופית':'המשך למפה ▶'}</button>
+      </div>`);
+  $('#contBtn').onclick=()=>{ sfx.click(); allDone?certScreen():mapScreen(); };
+}
+
+/* ----- Certificate ----- */
+function certScreen(){
+  cur=null; updateHUD(); sfx.win(); burst('var(--yellow)'); setTimeout(()=>burst('var(--cyan)'),300);
+  const badges=STATIONS.map(s=>s.badge).join(' ');
+  go(`<div class="cert fade">
+        <div class="seal">🎖️</div>
+        <div class="chip" style="--c:var(--yellow);margin-top:6px">תעודת הסמכה</div>
+        <p style="margin:14px 0 2px;color:var(--muted)">מוענקת בזאת ל־</p>
+        <div class="name neon">${escapeHtml(S.name)}</div>
+        <p style="font-weight:800;font-size:18px">🛡️ סוכן/ת בטיחות סייבר מוסמך/ת 🛡️</p>
+        <div class="badges">${badges}</div>
+        <div class="stat-row">
+          <div class="stat"><b>${S.score}</b><span>נקודות</span></div>
+          <div class="stat"><b>5/5</b><span>תגים</span></div>
+          <div class="stat"><b>${TOTAL}</b><span>משימות</span></div>
+        </div>
+        <p class="subtitle" style="margin-top:8px">עכשיו את/ה יודע/ת לשמור על עצמך ועל חברים ברשת. שתף/י את מה שלמדת! 💙</p>
+        <button class="btn big" id="againBtn" style="margin-top:16px">שחק/י שוב 🔄</button>
+      </div>`);
+  $('#againBtn').onclick=()=>{ sfx.click(); if(confirm('להתחיל מחדש ולשחק שוב?')){ S.score=0;S.done=[];save(); startScreen(); } };
+}
+
+/* ---------- confetti ---------- */
+const cv=$('#confetti'), cx=cv.getContext('2d'); let parts=[];
+function sz(){ cv.width=innerWidth; cv.height=innerHeight; } sz(); addEventListener('resize',sz);
+function cssColor(v){ if(v&&v.startsWith('var(')){ return getComputedStyle(document.documentElement).getPropertyValue(v.slice(4,-1)).trim()||'#fff'; } return v||'#fff'; }
+function burst(color){
+  const col=cssColor(color); const cols=[col,'#ffd54f','#00e5ff','#b388ff','#ff5c8a','#00e676'];
+  for(let i=0;i<140;i++) parts.push({
+    x:innerWidth/2+(Math.random()-.5)*120, y:innerHeight*0.35,
+    vx:(Math.random()-.5)*9, vy:Math.random()*-11-3,
+    g:.3+Math.random()*.2, s:5+Math.random()*7, r:Math.random()*6,
+    vr:(Math.random()-.5)*.4, c:cols[i%cols.length], life:90+Math.random()*40
+  });
+  if(!raf) tick();
+}
+let raf=null;
+function tick(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts.forEach(p=>{ p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr; p.life--;
+    cx.save(); cx.translate(p.x,p.y); cx.rotate(p.r); cx.fillStyle=p.c; cx.globalAlpha=Math.max(0,p.life/40);
+    cx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6); cx.restore(); });
+  parts=parts.filter(p=>p.life>0 && p.y<cv.height+40);
+  if(parts.length) raf=requestAnimationFrame(tick); else { raf=null; cx.clearRect(0,0,cv.width,cv.height); }
+}
+
+/* ---------- utils ---------- */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- boot ---------- */
+startScreen();
+</script>
+</body>
+</html>
