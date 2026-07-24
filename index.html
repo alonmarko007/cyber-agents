@@ -4,6 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>סוכני הסייבר — משחק בטיחות ברשת</title>
+<meta name="description" content="משחק חינוכי ללימוד בטיחות ברשת לילדים בגיל 10.">
+<meta name="theme-color" content="#070b18">
+<!-- PWA -->
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<!-- iOS home-screen app -->
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="סוכני הסייבר">
 <style>
   :root{
     --bg:#070b18;
@@ -23,6 +35,8 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
+  html{height:-webkit-fill-available}
+  body{overscroll-behavior-y:contain}
   body{
     font-family:'Segoe UI','Assistant','Arial Hebrew',system-ui,sans-serif;
     background:
@@ -42,7 +56,9 @@
     background-size:44px 44px;
     mask:radial-gradient(circle at 50% 40%,#000,transparent 85%);
   }
-  #app{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:14px 14px 40px;min-height:100%}
+  #app{position:relative;z-index:1;max-width:820px;margin:0 auto;min-height:100%;
+       padding:calc(14px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right))
+               calc(40px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
   canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
 
   h1,h2,h3{margin:0}
@@ -705,6 +721,13 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<'
 
 /* ---------- boot ---------- */
 startScreen();
+
+/* ---------- PWA: register service worker ---------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
