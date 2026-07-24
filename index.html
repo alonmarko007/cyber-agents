@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>סוכני הסייבר — משחק בטיחות ברשת</title>
-<meta name="description" content="משחק חינוכי ללימוד בטיחות ברשת לילדים בגיל 10.">
+<meta name="description" content="משחק חינוכי ללימוד בטיחות ברשת לבני נוער בגיל 13.">
 <meta name="theme-color" content="#070b18">
 <!-- PWA -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -29,6 +29,7 @@
     --green:#00e676;
     --pink:#ff5c8a;
     --yellow:#ffd54f;
+    --orange:#ff9a3c;
     --good:#00e676;
     --bad:#ff4d6d;
     --line:rgba(120,150,220,.25);
@@ -150,14 +151,22 @@
   .opt.dim{opacity:.5}
   @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}60%{transform:translateX(8px)}}
 
-  .feedback{margin-top:16px;border-radius:16px;padding:16px;border:1px solid var(--line);animation:rise .3s}
-  .feedback.good{background:rgba(0,230,118,.10);border-color:var(--good)}
-  .feedback.bad{background:rgba(255,77,109,.10);border-color:var(--bad)}
-  .feedback .fb-title{font-weight:900;font-size:18px;margin-bottom:6px}
-  .feedback.good .fb-title{color:var(--good)}
-  .feedback.bad .fb-title{color:var(--bad)}
-  .feedback .fb-text{line-height:1.5;color:var(--ink);font-size:15px}
-  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  /* ---------- Feedback modal (always visible, never off-screen) ---------- */
+  .fb-overlay{position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end;justify-content:center;
+    background:rgba(4,8,20,.55);backdrop-filter:blur(3px);animation:fadein .2s;
+    padding:12px 12px calc(14px + env(safe-area-inset-bottom))}
+  .fb-modal{width:100%;max-width:560px;background:var(--panel-solid);border:2px solid var(--line);
+    border-radius:22px;padding:22px 20px;text-align:center;animation:slideup .28s cubic-bezier(.2,.9,.3,1);
+    box-shadow:0 -10px 44px -8px rgba(0,0,0,.65)}
+  .fb-modal.good{border-color:var(--good);box-shadow:0 0 44px -10px var(--good)}
+  .fb-modal.bad{border-color:var(--yellow);box-shadow:0 0 44px -10px var(--yellow)}
+  .fb-emoji{font-size:52px;line-height:1;margin-bottom:4px}
+  .fb-modal .fb-title{font-weight:900;font-size:20px;margin-bottom:8px}
+  .fb-modal.good .fb-title{color:var(--good)}
+  .fb-modal.bad .fb-title{color:var(--yellow)}
+  .fb-modal .fb-text{line-height:1.55;color:var(--ink);font-size:15px;opacity:.96}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  @keyframes slideup{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
 
   /* ---------- Sort mini-game ---------- */
   .sort-items{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0 6px;min-height:20px}
@@ -166,8 +175,6 @@
         font-weight:800;font-size:15px;transition:transform .08s}
   .item:active{transform:scale(.96)}
   .item.selected{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(255,213,79,.3);color:var(--yellow)}
-  .item.ok{border-color:var(--good);background:rgba(0,230,118,.15)}
-  .item.no{border-color:var(--bad);background:rgba(255,77,109,.15);animation:shake .35s}
   .bins{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
   .bin{background:#0a1128;border:2px dashed var(--line);border-radius:18px;padding:12px;min-height:120px}
   .bin.armed{border-color:var(--yellow);box-shadow:0 0 18px -4px var(--yellow)}
@@ -201,7 +208,7 @@
     <div class="hearts" id="hudHearts">❤️❤️❤️</div>
     <div class="xpwrap">
       <div class="xpbar"><div class="xpfill" id="xpFill"></div></div>
-      <div class="xplabel" id="xpLabel">0 / 22 משימות</div>
+      <div class="xplabel" id="xpLabel">0 / 27 משימות</div>
     </div>
     <div class="hud-score"><span id="hudScore">0</span><small> נק'</small></div>
     <button id="muteBtn" title="צליל">🔊</button>
@@ -367,10 +374,48 @@ const STATIONS = [
         options:['אתקין הכול, אני רוצה את המשחק','אתקין רק את המשחק','לא מוריד מאתר לא מוכר — עדיף לשאול הורה'], answer:2,
         explain:'תוכנות "נוספות" מאתרים לא מוכרים יכולות להיות וירוסים. מורידים משחקים רק מחנויות רשמיות, ובאישור הורה.' }
     ]
+  },
+  {
+    id:'social', title:'עולם הרשתות החברתיות', emoji:'📱', color:'var(--orange)', badge:'🌐',
+    badgeName:'מגן/ת הרשתות',
+    challenges:[
+      { type:'quiz',
+        text:'הפרופיל שלך ברשת חברתית פתוח לכולם, וזר מגיב לתמונה: "וואו, איפה זה? באיזה רחוב צילמת?"',
+        prompt:'מה הכי נכון?',
+        options:['לענות, זה סתם רחוב','לענות לו בפרטי','לא לשתף מיקום — ולשקול להפוך את הפרופיל לפרטי'], answer:2,
+        explain:'מיקום מדויק מאפשר לזרים למצוא אותך במציאות. פרופיל פרטי ואי-שיתוף מיקום שומרים עליך. אתה בוחר מי רואה אותך.' },
+      { type:'quiz',
+        text:'אתה עומד להעלות סטורי עם שיתוף מיקום חי מהמסיבה — כדי שכולם יראו איפה אתה עכשיו.',
+        prompt:'מה כדאי?',
+        options:['להעלות, כולם עושים את זה','להעלות רק לעוקבים','לא לשתף מיקום בזמן אמת — זה מגלה לזרים איפה אתה בדיוק ברגע זה'], answer:2,
+        explain:'שיתוף מיקום חי חושף בזמן אמת איפה אתה. וגם — מה שמעלים לרשת נשאר ("טביעת רגל דיגיטלית"), אפילו אחרי מחיקה.' },
+      { type:'sort',
+        text:'גרור ומיין: מה מתאים לפוסט ציבורי?',
+        binL:'מתאים לפוסט ציבורי 🌍', binR:'עדיף לשמור פרטי 🔒',
+        items:[
+          {t:'דעה על סדרה שאהבת',bin:0},
+          {t:'כתובת הבית ומספר טלפון',bin:1},
+          {t:'מם מצחיק',bin:0},
+          {t:'מערכת השעות ושם בית הספר',bin:1},
+          {t:'שיתוף מיקום חי',bin:1},
+          {t:'תחביב או ספורט שאתה אוהב',bin:0}
+        ],
+        explain:'תוכן על דעות, תחביבים והומור בטוח לשיתוף. פרטים שמזהים איפה אתה גר, לומד או נמצא כרגע — נשארים פרטיים.' },
+      { type:'quiz',
+        text:'מישהו "בגילך" שאינך מכיר עוקב אחריך, מחמיא לך הרבה, ומבקש לעבור לצ׳אט פרטי ולשלוח תמונות.',
+        prompt:'מה תעשה?',
+        options:['אשלח, הוא נשמע נחמד','אשלח תמונה אחת רק','לא שולח תמונות ומספר למבוגר — פרופיל יכול להיות מזויף'], answer:2,
+        explain:'פרופיל ברשת יכול להיות מזויף (התחזות/catfishing). מחמאות מהירות ובקשה לתמונות פרטיות הן דגל אדום — לא שולחים, ומספרים למבוגר.' },
+      { type:'quiz',
+        text:'בקבוצה מפיצים צילום מסך מביך של תלמיד אחר, ומבקשים שתשתף גם אתה בסטורי.',
+        prompt:'מה הכי נכון?',
+        options:['לשתף, זה מצחיק','לשתף רק לכמה חברים','לא לשתף — הפצה כזו פוגעת, ומה שמעלים לרשת נשאר לאורך זמן'], answer:2,
+        explain:'הפצת תוכן מביך פוגעת באדם וגם יכולה להישאר ברשת שנים. מה שמפרסמים היום עלול לחזור בעתיד — חושבים לפני ששולחים.' }
+    ]
   }
 ];
 
-const RANKS = ['מתלמד/ת','סוכן/ת זוטר/ה','סוכן/ת','סוכן/ת מנוסה','סוכן/ת בכיר/ה','סוכן/ת על 🏆'];
+const RANKS = ['מתלמד/ת','סוכן/ת זוטר/ה','סוכן/ת','סוכן/ת מנוסה','סוכן/ת בכיר/ה','סוכן/ת מומחה/ית','סוכן/ת על 🏆'];
 const TOTAL = STATIONS.reduce((n,s)=>n+s.challenges.length,0);
 const LIVES = 3;
 const SAVE_KEY = 'cyberAgentsSave';
@@ -387,27 +432,61 @@ function load(){ try{ const d=JSON.parse(localStorage.getItem(SAVE_KEY)); if(d){
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted})); }catch(e){} }
 load();
 
-/* ---------- sound (Web Audio, generated) ---------- */
-let actx=null;
-function ac(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
-function tone(freq,dur,type='sine',vol=.18,when=0){
+/* ---------- sound (Web Audio: soft, warm, generated) ---------- */
+let actx=null, master=null;
+function ac(){
+  if(!actx){ try{
+    actx=new (window.AudioContext||window.webkitAudioContext)();
+    master=actx.createGain(); master.gain.value=.9;
+    const lp=actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2600; lp.Q.value=.2;
+    master.connect(lp); lp.connect(actx.destination);
+  }catch(e){} }
+  return actx;
+}
+function tone(freq,dur,type,vol,when){
   if(S.muted) return; const c=ac(); if(!c) return;
+  type=type||'sine'; vol=(vol==null?.12:vol); when=when||0;
   const o=c.createOscillator(), g=c.createGain(), t=c.currentTime+when;
   o.type=type; o.frequency.setValueAtTime(freq,t);
-  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.02);
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+.03);
   g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+.02);
+  o.connect(g); g.connect(master||c.destination); o.start(t); o.stop(t+dur+.05);
 }
 const sfx={
-  click:()=>tone(320,.06,'square',.08),
-  correct:()=>{tone(660,.12,'triangle',.16,0);tone(880,.16,'triangle',.16,.1);tone(1180,.22,'triangle',.16,.2);},
-  wrong:()=>{tone(200,.18,'sawtooth',.12,0);tone(150,.22,'sawtooth',.12,.12);},
-  badge:()=>{[523,659,784,1046].forEach((f,i)=>tone(f,.25,'triangle',.16,i*.12));},
-  win:()=>{[523,659,784,1046,1318].forEach((f,i)=>tone(f,.3,'triangle',.17,i*.13));}
+  click:()=>tone(523.25,.06,'sine',.05),
+  correct:()=>{[523.25,659.25,783.99].forEach((f,i)=>tone(f,.3,'sine',.12,i*.085));},
+  wrong:()=>{ tone(392,.18,'sine',.10,0); tone(311.13,.26,'sine',.10,.12); },
+  badge:()=>{[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(f,.34,'sine',.12,i*.1));},
+  win:()=>{[523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>tone(f,.36,'sine',.13,i*.12));}
 };
 
+/* ---------- dynamic feedback (varied & encouraging) ---------- */
+const CORRECT_OPENERS=[
+  n=>`כל הכבוד, ${n}! 🎉`,
+  ()=>`יש! זיהית נכון 💪`,
+  ()=>`מעולה! סוכן/ת חד/ה 🕵️`,
+  ()=>`בול! ככה שומרים על עצמנו 🛡️`,
+  n=>`תשובה חכמה, ${n}! ⭐`,
+  ()=>`מצוין! אתה/את לומד/ת מהר ⚡`,
+  ()=>`נכון מאוד — החלטה נבונה 🧠`,
+  ()=>`אלוף/ת בטיחות ברשת! 🏆`,
+  ()=>`בדיוק! ממשיכים ככה 🚀`,
+  ()=>`יופי של שיקול דעת 👏`
+];
+const WRONG_OPENERS=[
+  ()=>`כמעט! בוא/י נחשוב שוב 🤔`,
+  ()=>`לא נורא — גם סוכנים לומדים מטעויות 💡`,
+  ()=>`רגע, יש כאן דרך בטוחה יותר 🧐`,
+  ()=>`ננסה שוב יחד 🤝`,
+  ()=>`קרוב! חשוב/י על זה עוד רגע 🔎`,
+  ()=>`זה בסדר, ננסה אחרת 🌱`
+];
+let _pl={v:-1}, _wl={v:-1};
+function pick(arr,ref){ let i; do{ i=Math.floor(Math.random()*arr.length); }while(arr.length>1 && i===ref.v); ref.v=i; return arr[i]; }
+
 /* ---------- HUD ---------- */
-function rankIndex(){ return S.done.length; }
+function rankIndex(){ return Math.min(S.done.length, RANKS.length-1); }
 function updateHUD(){
   hud.style.display='flex';
   $('#hudScore').textContent=S.score;
@@ -435,16 +514,15 @@ function go(html){ screen.innerHTML=html; screen.classList.remove('fade'); void 
 /* ----- Start ----- */
 function startScreen(){
   cur=null; updateHUD(); hud.style.display='none';
-  const finishedAll = S.done.length===STATIONS.length;
   go(`
     <div class="card center">
       <div class="agent-emoji">🕵️‍♂️</div>
       <h1 class="logo">סוֹכְנֵי הַסַּיְבֶּר</h1>
-      <div class="subtitle">משחק הבטיחות ברשת · לגיל 10</div>
+      <div class="subtitle">משחק הבטיחות ברשת · לגיל 13</div>
       <div style="margin-top:10px">
         <span class="tag">🔒 סיסמאות</span><span class="tag">🕵️ זרים</span>
         <span class="tag">🛡️ מידע אישי</span><span class="tag">💬 בריונות</span>
-        <span class="tag">🎣 קישורים חשודים</span>
+        <span class="tag">🎣 קישורים חשודים</span><span class="tag">📱 רשתות חברתיות</span>
       </div>
       <input id="nameInput" maxlength="16" placeholder="איך קוראים לך, סוכן/ת?" value="${escapeHtml(S.name)}" />
       <button class="btn big" id="startBtn">${S.done.length? 'המשך משימה ▶':'התחל משימה ▶'}</button>
@@ -520,9 +598,7 @@ function renderQuiz(st,ch,head){
         ${head}
         <div class="scenario">${ch.text}</div>
         <div class="prompt">${ch.prompt||''}</div>
-        <div class="options" id="opts">${opts}</div>
-        <div id="fb"></div>
-      </div>`);
+        <div class="options" id="opts">${opts}</div>      </div>`);
   document.querySelectorAll('#opts .opt').forEach(b=>{
     b.onclick=()=>answerQuiz(+b.dataset.i, st, ch);
   });
@@ -560,9 +636,7 @@ function renderSort(st,ch,head){
           <div class="bin binL" data-bin="0"><h4>${ch.binL}</h4><div class="drop" id="d0"></div></div>
           <div class="bin binR" data-bin="1"><h4>${ch.binR}</h4><div class="drop" id="d1"></div></div>
         </div>
-        <button class="btn big" id="checkBtn" style="margin-top:16px" disabled>בדוק/י ✔</button>
-        <div id="fb"></div>
-      </div>`);
+        <button class="btn big" id="checkBtn" style="margin-top:16px" disabled>בדוק/י ✔</button>      </div>`);
   document.querySelectorAll('.bin').forEach(bin=> bin.onclick=()=>placeSelected(+bin.dataset.bin, st, ch));
   $('#checkBtn').onclick=()=>checkSort(st,ch);
   drawSort(st);
@@ -592,29 +666,16 @@ function placeSelected(bin, st){
   const it=s.items.find(i=>i.idx===s.selected); it.placed=bin; s.selected=null; sfx.click(); drawSort(st);
 }
 function checkSort(st,ch){
-  const {items}=cur._sort;
-  const wrongEls=[]; let allOk=true;
-  const nodes=document.querySelectorAll('.item');
-  items.forEach(it=>{
-    const ok = it.placed===it.bin;
-    if(!ok){ allOk=false; }
-  });
-  // mark visually
-  document.querySelectorAll('#d0 .item,#d1 .item').forEach(el=>{
-    const it=items.find(i=>i.t===el.textContent);
-    if(it){ el.classList.remove('ok','no'); el.classList.add(it.placed===it.bin?'ok':'no'); }
-  });
-  if(allOk){
+  const items=cur._sort.items;
+  const wrong = items.filter(it=>it.placed!==it.bin).length;
+  if(wrong===0){
     sfx.correct(); $('#checkBtn').disabled=true;
     awardCorrect(st,ch);
   } else {
     cur.lives--; cur.firstTry=false; sfx.wrong(); updateHUD();
-    showFeedback(false, ch.explain+' נסה/י לסדר מחדש את הפריטים המסומנים באדום.', ()=>{
-      if(cur.lives<=0){ stationFailed(st); return; }
-      // reset only the wrong ones back to pool for another try
-      items.forEach(it=>{ if(it.placed!==it.bin) it.placed=null; });
-      cur._sort.selected=null; drawSort(st);
-    });
+    // No per-item reveal — teach the principle and let them rethink (their arrangement stays).
+    const hint = ch.explain + ` <b>(עדיין ${wrong} לא במקום הנכון — חשוב/י איזה צד מתאים לכל פריט.)</b>`;
+    showFeedback(false, hint, ()=>{ if(cur.lives<=0){ stationFailed(st); } });
   }
 }
 
@@ -624,15 +685,18 @@ function awardCorrect(st,ch){
   showFeedback(true, ch.explain, ()=>nextChallenge(st), pts);
 }
 function showFeedback(good, text, onNext, pts){
-  const fb=$('#fb');
-  fb.innerHTML=`
-    <div class="feedback ${good?'good':'bad'}">
-      <div class="fb-title">${good?('נכון! +'+pts+' נק\' 🎉'):'לא מדויק 💡'}</div>
+  const opener = good ? pick(CORRECT_OPENERS,_pl)(S.name) : pick(WRONG_OPENERS,_wl)(S.name);
+  const title = good ? `${opener} · +${pts} נק'` : opener;
+  const ov=document.createElement('div'); ov.className='fb-overlay';
+  ov.innerHTML=`
+    <div class="fb-modal ${good?'good':'bad'}">
+      <div class="fb-emoji">${good?'🎉':'💡'}</div>
+      <div class="fb-title">${title}</div>
       <div class="fb-text">${text}</div>
-      <button class="btn big" id="nextBtn" style="margin-top:14px">${good?'המשך ▶':'נסה/י שוב 🔁'}</button>
+      <button class="btn big" id="fbBtn" style="margin-top:16px">${good?'המשך ▶':'נסה/י שוב 🔁'}</button>
     </div>`;
-  fb.scrollIntoView({behavior:'smooth',block:'nearest'});
-  $('#nextBtn').onclick=()=>{ sfx.click(); onNext(); };
+  document.body.appendChild(ov);
+  ov.querySelector('#fbBtn').onclick=()=>{ sfx.click(); ov.remove(); if(onNext) onNext(); };
 }
 function nextChallenge(st){
   cur.ci++;
@@ -662,7 +726,7 @@ function stationComplete(st){
         <p class="subtitle">סיימת את «${st.title}». כל הכבוד, סוכן/ת!</p>
         <div class="stat-row">
           <div class="stat"><b>${S.score}</b><span>נקודות</span></div>
-          <div class="stat"><b>${S.done.length}/5</b><span>תגים</span></div>
+          <div class="stat"><b>${S.done.length}/${STATIONS.length}</b><span>תגים</span></div>
         </div>
         <button class="btn big" id="contBtn">${allDone?'🎖️ לתעודה הסופית':'המשך למפה ▶'}</button>
       </div>`);
@@ -682,7 +746,7 @@ function certScreen(){
         <div class="badges">${badges}</div>
         <div class="stat-row">
           <div class="stat"><b>${S.score}</b><span>נקודות</span></div>
-          <div class="stat"><b>5/5</b><span>תגים</span></div>
+          <div class="stat"><b>${STATIONS.length}/${STATIONS.length}</b><span>תגים</span></div>
           <div class="stat"><b>${TOTAL}</b><span>משימות</span></div>
         </div>
         <p class="subtitle" style="margin-top:8px">עכשיו את/ה יודע/ת לשמור על עצמך ועל חברים ברשת. שתף/י את מה שלמדת! 💙</p>
