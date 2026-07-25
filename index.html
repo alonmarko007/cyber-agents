@@ -125,12 +125,15 @@
   .btn{display:inline-block;padding:15px 26px;border-radius:16px;font-weight:900;font-size:18px;
        background:linear-gradient(180deg,var(--cyan),#00a7c4);color:#04121a;
        box-shadow:0 8px 0 #026277,0 10px 24px rgba(0,229,255,.35);transition:transform .06s,box-shadow .06s}
-  .btn:active{transform:translateY(5px);box-shadow:0 3px 0 #026277,0 6px 14px rgba(0,229,255,.3)}
+  .btn:not(:disabled):active{transform:translateY(5px);box-shadow:0 3px 0 #026277,0 6px 14px rgba(0,229,255,.3)}
   .btn.big{width:100%;margin-top:16px;font-size:20px}
   .btn.ghost{background:#0e1738;color:var(--ink);box-shadow:0 6px 0 #060c22;border:1px solid var(--line)}
-  .btn.ghost:active{box-shadow:0 2px 0 #060c22}
+  .btn.ghost:not(:disabled):active{box-shadow:0 2px 0 #060c22}
+  /* a disabled button must not look tappable (sort "check" starts disabled, join button locks while fetching) */
+  .btn:disabled{opacity:.45;cursor:not-allowed}
   .hint{color:var(--muted);font-size:12px;margin-top:12px}
   .logo-class{font-size:.48em;display:inline-block}
+  .code-err{min-height:20px;margin-top:8px;color:var(--bad);font-size:13px;font-weight:800}
   .credit{color:var(--muted);font-size:11px;margin-top:14px;opacity:.7}
   .link-btn{background:none;color:var(--muted);font-size:12px;font-weight:700;text-decoration:underline;
             padding:8px;margin-top:8px;min-height:44px}
@@ -795,7 +798,7 @@ function load(){
   if(!S.deviceId){ try{ S.deviceId=crypto.randomUUID(); }catch(e){ S.deviceId='d'+Date.now()+Math.random().toString(36).slice(2); } }
 }
 function save(){
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays,onboarded:S.onboarded,weakTopics:S.weakTopics,reviewDone:S.reviewDone,deviceId:S.deviceId,classId:S.classId,classCode:S.classCode,className:S.className})); }catch(e){}
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays,onboarded:S.onboarded,weakTopics:S.weakTopics,reviewDone:S.reviewDone,deviceId:S.deviceId,classId:S.classId,classCode:S.classCode,className:S.className,classAsked:S.classAsked})); }catch(e){}
   if(S.classId) syncStudentProgress();
 }
 load();
@@ -922,11 +925,6 @@ function startScreen(){
       </div>
       <label for="nameInput" class="name-label">✍️ קודם כל, איך קוראים לך?</label>
       <input id="nameInput" maxlength="16" placeholder="הקלד/י את השם שלך כאן" value="${S.name==='סוכן/ת'?'':escapeHtml(S.name)}" />
-      ${!S.classCode? `
-      <label for="classCodeInput" class="name-label" style="margin-top:14px;font-size:13px">🏫 קוד כיתה מהמורה (לא חובה)</label>
-      <input id="classCodeInput" maxlength="6" placeholder="לדוגמה: KX7P2M"
-        style="width:100%;margin-top:6px;padding:11px;border-radius:12px;background:#0a1128;
-        border:2px solid var(--line);color:var(--ink);font-size:15px;text-align:center;font-weight:800;letter-spacing:3px" />` : ''}
       <button class="btn big" id="startBtn">${S.done.length? 'המשך משימה ▶':'התחל משימה ▶'}</button>
       ${S.done.length? `<button class="btn ghost big" id="resetBtn" style="margin-top:10px">התחל מחדש 🔄</button>`:''}
       <div class="hint">🔐 השם וההתקדמות נשמרים רק במכשיר שלך.</div>
@@ -934,27 +932,64 @@ function startScreen(){
     </div>
   `);
   const ni=$('#nameInput'); ni.focus(); ni.select();
-  $('#startBtn').onclick=async()=>{
+  $('#startBtn').onclick=()=>{
     const v=$('#nameInput').value.trim();
-    S.name = v || 'סוכן/ת'; sfx.click();
-    const codeInput=$('#classCodeInput');
-    const code=codeInput? codeInput.value.trim() : '';
-    if(code && !S.classCode){
-      const btn=$('#startBtn'); const origLabel=btn.textContent;
-      btn.disabled=true; btn.textContent='מצטרף/ת לכיתה…';
-      let cls=null;
-      try{ cls=await joinClass(code); }catch(e){}
-      if(!cls){
-        btn.disabled=false; btn.textContent=origLabel;
-        codeInput.style.borderColor='var(--bad)'; codeInput.focus();
-        alert('קוד הכיתה לא נמצא. אפשר לבדוק שוב עם המורה, או להשאיר ריק ולשחק בלי כיתה.');
-        return;
-      }
-    }
-    save();
+    S.name = v || 'סוכן/ת'; save(); sfx.click();
+    // Ask for a teacher's class code only here — after "start", never on the screen before it.
+    // Skipped entirely for kids who arrived through a class link, or who already answered once.
+    if(!S.classCode && !S.classAsked) return classCodeScreen();
     S.onboarded ? mapScreen() : onboardingScreen();
   };
   const rb=$('#resetBtn'); if(rb) rb.onclick=()=>{ if(confirm('להתחיל את כל המשחק מחדש?')){ S.score=0;S.done=[];S.partial={};S.weakTopics=[];S.reviewDone=false;delete S.advRound;streak=0;save();sfx.click();startScreen(); } };
+}
+
+/* ----- Class code (own step, straight after "start") -----
+   Progressive disclosure: a kid playing alone should never meet a PIN field on the way in,
+   so this asks once, right here, with an equally easy way past it. */
+function classCodeScreen(){
+  go(`
+    <div class="card center" style="--c:var(--cyan)">
+      <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('network')}</div>
+      <h2 style="margin-top:6px" class="neon">משחק/ת עם הכיתה, ${escapeHtml(S.name)}?</h2>
+      <p class="subtitle">אם המורה נתן/ה לך קוד כיתה — הקלד/י אותו כאן. אם לא, אפשר להמשיך ישר למשחק.</p>
+      <label for="classCodeInput" class="name-label" style="margin-top:18px">קוד הכיתה מהמורה</label>
+      <input id="classCodeInput" maxlength="6" placeholder="לדוגמה: KX7P2M"
+        autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="codeErr"
+        style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
+        border:2px solid var(--cyan);color:var(--ink);font-size:20px;text-align:center;font-weight:900;letter-spacing:5px;
+        box-shadow:0 0 14px -4px var(--cyan)" />
+      <div id="codeErr" class="code-err" role="alert"></div>
+      <button class="btn big" id="joinBtn">הצטרף/י לכיתה ▶</button>
+      <button class="btn ghost big" id="skipBtn" style="margin-top:10px">אין לי קוד — המשך למשחק</button>
+    </div>
+  `);
+  const inp=$('#classCodeInput'), err=$('#codeErr'), joinBtn=$('#joinBtn');
+  inp.focus();
+  inp.oninput=()=>{ inp.value=inp.value.toUpperCase(); err.textContent=''; err.style.color=''; inp.style.borderColor='var(--cyan)'; };
+  const proceed=()=>{ S.classAsked=true; save(); S.onboarded ? mapScreen() : onboardingScreen(); };
+  const showErr=(msg)=>{
+    err.textContent=msg; inp.style.borderColor='var(--bad)';
+    inp.focus(); inp.select();                       // focus-management: land the kid back on the bad field
+    joinBtn.disabled=false; joinBtn.textContent='הצטרף/י לכיתה ▶';
+  };
+  joinBtn.onclick=async()=>{
+    const code=inp.value.trim();
+    if(!code) return showErr('צריך להקליד קוד, או ללחוץ «אין לי קוד».');
+    sfx.click();
+    joinBtn.disabled=true; joinBtn.textContent='מצטרף/ת…';
+    let cls=null;
+    try{ cls=await joinClass(code); }catch(e){ return showErr('אין חיבור לאינטרנט כרגע. אפשר להמשיך בלי כיתה.'); }
+    if(!cls) return showErr('הקוד הזה לא נמצא. כדאי לבדוק שוב עם המורה.');
+    sfx.badge(); syncStudentProgress();
+    // Confirm which class they actually landed in before moving on — a mistyped-but-valid
+    // code should be visible to the kid, not silently accepted.
+    err.style.color='var(--green)';
+    err.textContent=`הצטרפת לכיתת ${cls.name||cls.code}! ✅`;
+    joinBtn.textContent='מצוין! ממשיכים…';
+    setTimeout(proceed, 1100);
+  };
+  inp.onkeydown=(e)=>{ if(e.key==='Enter') joinBtn.click(); };
+  $('#skipBtn').onclick=()=>{ sfx.click(); proceed(); };
 }
 
 /* ----- Onboarding (shown once, before the first station) ----- */
@@ -1834,9 +1869,13 @@ window.addEventListener('error', ()=>{
   if(resultsCode) return classResultsScreen(resultsCode);
   if(teacherFlag) return teacherHubScreen();
   if(classCode){
+    // Arriving through a class link already answers "are you playing with a class?" — don't ask again,
+    // even if the join fetch is still in flight when the kid hits start.
+    S.classAsked=true;
     // Show the class name on the very first paint (from the link's ?cn=), so the invitation
     // visibly ties back to the class the teacher named — no need to wait on the join fetch.
-    if(classNameParam){ S.classCode=classCode; S.className=classNameParam; save(); }
+    if(classNameParam){ S.classCode=classCode; S.className=classNameParam; }
+    save();
     joinClass(classCode).then(cls=>{
       if(cls){ syncStudentProgress(); refreshLogo(); }
     }).catch(()=>{});
