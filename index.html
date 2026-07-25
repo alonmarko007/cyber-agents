@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>סוכני הסייבר — משחק בטיחות ברשת</title>
-<meta name="description" content="משחק חינוכי ללימוד בטיחות ברשת לבני נוער בגיל 13.">
+<meta name="description" content="משחק חינוכי ללימוד בטיחות ברשת לילדים ובני נוער.">
 <meta name="theme-color" content="#070b18">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -120,16 +120,49 @@
   .btn.ghost:active{box-shadow:0 2px 0 #060c22}
   .hint{color:var(--muted);font-size:12px;margin-top:12px}
   .credit{color:var(--muted);font-size:11px;margin-top:14px;opacity:.7}
+  .link-btn{background:none;color:var(--muted);font-size:12px;font-weight:700;text-decoration:underline;
+            padding:8px;margin-top:8px;min-height:44px}
   .tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;
        background:#0a1128;border:1px solid var(--line);color:var(--muted);margin:3px}
   .btn.adv-btn{background:linear-gradient(180deg,var(--purple),#7a4fd9);color:#0c0620;
        box-shadow:0 8px 0 #4a2e96,0 10px 24px rgba(179,136,255,.35)}
   .btn.adv-btn:active{box-shadow:0 3px 0 #4a2e96,0 6px 14px rgba(179,136,255,.3)}
+  .btn.danger{background:#0e1738;color:var(--bad);box-shadow:0 6px 0 #060c22;border:1px solid var(--bad)}
+  .btn.danger:active{box-shadow:0 2px 0 #060c22}
+  .myclass-del{flex-shrink:0;background:none;color:var(--muted);font-size:18px;padding:6px 10px;
+      min-height:44px;min-width:44px;border-radius:10px}
+  .myclass-del:hover{color:var(--bad)}
   .recap-title{margin-top:18px;font-weight:900;font-size:14px;color:var(--yellow)}
   .recap-list{list-style:none;margin:10px 0 0;padding:0;text-align:start;display:flex;flex-direction:column;gap:8px}
   .recap-list li{background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:9px 12px;
        font-size:13px;line-height:1.4;color:var(--ink);opacity:0;animation:recapIn .4s ease forwards}
   @keyframes recapIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .onboard-list{display:flex;flex-direction:column;gap:12px;margin-top:16px;text-align:start}
+  .onboard-step{display:flex;gap:12px;align-items:flex-start;background:#0a1128;border:1px solid var(--line);
+      border-radius:14px;padding:12px}
+  .onboard-num{flex:0 0 28px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+      font-weight:900;color:var(--c);border:2px solid var(--c);background:rgba(255,255,255,.03)}
+  .onboard-text{font-size:14px;line-height:1.5;color:var(--ink)}
+  .onboard-text b{color:var(--cyan)}
+  .link-box{margin-top:8px;background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+      font-size:12px;color:var(--muted);word-break:break-all;text-align:center;direction:ltr}
+  .topic-bar-row{margin-top:10px}
+  .topic-bar-head{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .topic-bar-icon{width:20px;height:20px;flex-shrink:0}
+  .topic-bar-icon .icon{width:100%;height:100%}
+  .topic-bar-title{flex:1;min-width:0;font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topic-bar-pct{font-weight:900;font-size:13px;color:var(--ink)}
+  .topic-bar-track{height:10px;border-radius:99px;background:#0a1128;border:1px solid var(--line);overflow:hidden}
+  .topic-bar-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+  .myclass-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .myclass-row{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;
+      background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:10px 12px;transition:border-color .12s}
+  .myclass-row:active{transform:scale(.98)}
+  .myclass-row:hover{border-color:var(--cyan)}
+  .myclass-info{min-width:0;text-align:start}
+  .myclass-name{font-weight:800;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .myclass-code{font-size:11px;color:var(--muted);direction:ltr;text-align:start}
+  .myclass-count{font-weight:900;font-size:13px;color:var(--cyan);white-space:nowrap}
 
   /* ---------- Map ---------- */
   .map-title{text-align:center;margin-bottom:6px}
@@ -164,6 +197,7 @@
   .station.clickable{cursor:pointer}
   .station.clickable:active{transform:scale(.985)}
   .map-footer{text-align:center;margin-top:6px}
+  .save-note{text-align:center;color:var(--muted);font-size:11px;margin-top:14px;opacity:.75}
   .sticky-head{position:sticky;top:0;z-index:5;margin:-20px -20px 14px;padding:14px 20px 10px;
        background:var(--panel);backdrop-filter:blur(8px);border-radius:20px 20px 0 0;
        box-shadow:0 10px 14px -10px rgba(0,0,0,.35)}
@@ -258,6 +292,24 @@
     .station.next{animation:none;box-shadow:0 0 0 2px var(--c),0 0 26px -6px var(--c)}
     .agent-emoji{animation:none}
   }
+
+  .print-date{color:var(--muted);font-size:11px;margin-top:8px}
+  @media print{
+    body::before,#hud,canvas#confetti,.no-print{display:none!important}
+    html,body{background:#fff!important;height:auto!important;overflow:visible!important}
+    #app{height:auto!important;padding:0!important;max-width:100%!important}
+    #screen{overflow:visible!important;display:block!important}
+    .cert{background:#fff!important;color:#111!important;box-shadow:none!important;
+      border:4px solid #d4a017!important;margin:20px auto!important}
+    .cert .name{color:#8a6d00!important;text-shadow:none!important}
+    .cert .chip{background:#fff!important;color:#8a6d00!important;border-color:#d4a017!important}
+    .cert p,.cert .stat span{color:#333!important}
+    .cert .stat{background:#f6f6f6!important;border-color:#ddd!important}
+    .cert .stat b{color:#111!important}
+    .cert .seal,.cert .badges .icon{filter:none!important}
+    .print-date{color:#555!important;font-size:13px!important}
+    .credit{color:#999!important}
+  }
 </style>
 </head>
 <body>
@@ -310,6 +362,18 @@ const STATIONS = [
         prompt:'בחר/י תשובה',
         options:['להשתמש באותה סיסמה שיש לי בכל מקום','להשתמש בתאריך הלידה שלי','ליצור סיסמה חדשה וארוכה, שונה מהאחרות'], answer:2,
         explain:'אם משתמשים באותה סיסמה בכל מקום ואחד האתרים נפרץ — כל החשבונות בסכנה. לכל מקום חשובה סיסמה משלו.' }
+    ],
+    extra:[
+      { type:'quiz',
+        text:'אתה משתמש/ת באפליקציה שמאפשרת "התחברות עם קוד ב-SMS" כתחליף לסיסמה בכל פעם מחדש.',
+        prompt:'מה הכי נכון לגבי שיטה כזו?',
+        options:['זה תמיד פחות בטוח מסיסמה','זה בסדר, אבל צריך גם לשמור את הטלפון בטוח ולא לשתף את הקוד עם אף אחד','עדיף לבטל ולחזור לסיסמה קבועה','אין הבדל, אפשר לשתף את הקוד עם חברים'], answer:1,
+        explain:'קוד חד-פעמי הוא שיטת אימות טובה, אבל היא בטוחה רק אם שומרים על הטלפון ולא משתפים את הקוד עם אף אחד — בדיוק כמו סיסמה.' },
+      { type:'quiz',
+        text:'המחשב מציע לך "לשמור סיסמה" באתר, אבל אתה נמצא במחשב ציבורי/משותף (כמו בספרייה או בבית ספר).',
+        prompt:'מה עדיף לעשות?',
+        options:['לשמור, זה נוח לפעם הבאה','לא לשמור במחשב משותף — ולהתנתק בסיום','לשמור ולמחוק את ההיסטוריה אחר כך','זה לא משנה כי אף אחד לא יבדוק'], answer:1,
+        explain:'במחשב ציבורי/משותף כל מי שישתמש אחריך יכול לגשת לחשבון אם הסיסמה נשמרה. תמיד מתנתקים ולא שומרים סיסמה במכשיר משותף.' }
     ]
   },
   {
@@ -336,6 +400,18 @@ const STATIONS = [
         prompt:'מה תעשה?',
         options:['אשמור סוד, הבטחתי','אחליט לפי מה שהוא יבקש','מספר מיד להורה — סוד שאסור לספר להורים זה סימן אזהרה'], answer:2,
         explain:'אדם שמבקש להסתיר דברים מההורים — זה דגל אדום. תמיד מותר ותמיד נכון לספר להורה שאתה סומך עליו.' }
+    ],
+    extra:[
+      { type:'quiz',
+        text:'שחקן/ית שהכרת במשחק אונליין שולח/ת לינק ל"מבחן אישיות מגניב" שמבטיח לגלות עליך דברים.',
+        prompt:'מה הכי נכון?',
+        options:['למלא, זה סתם כיף','לשלוח את הקישור לחברים קודם שימלאו גם','לא למלא טפסים עם פרטים אישיים מקישורים שקיבלת מזרים','למלא רק את השאלות שלא נשמעות אישיות מדי'], answer:2,
+        explain:'"מבחנים" כאלה הם לרוב דרך לאסוף פרטים אישיים או להחדיר קישור זדוני. לא ממלאים טפסים מקישורים שקיבלנו מאנשים שלא מכירים באמת.' },
+      { type:'quiz',
+        text:'מישהו שאתה לא מכיר במציאות מציע לך פריט/מטבעות יקרים במשחק "סתם כי הוא נדיב".',
+        prompt:'מה הכי נכון?',
+        options:['לקחת, זה בחינם ולא מזיק','לסרב ולחשוד — נדיבות פתאומית מזר היא לרוב ניסיון ליצור קשר או לבקש משהו בתמורה','לקחת אבל לא לענות לו יותר','לבקש ממנו עוד פריטים'], answer:1,
+        explain:'"מתנות" פתאומיות מזרים הן לעיתים דרך ליצור תחושת קרבה כדי לבקש משהו בהמשך (כמו פרטים אישיים). מסרבים בנימוס.' }
     ]
   },
   {
@@ -366,6 +442,18 @@ const STATIONS = [
         prompt:'בחר/י תשובה',
         options:['להשאיר דלוק, זה נוח','להדליק רק בסופ"ש','לכבות — לא צריך שכולם יידעו איפה אני נמצא'], answer:2,
         explain:'שיתוף מיקום מראה לזרים בדיוק איפה אתה. עדיף לכבות, ולהדליק רק אם הורה מאשר ולמטרה מסוימת.' }
+    ],
+    extra:[
+      { type:'quiz',
+        text:'אפליקציה חדשה מבקשת הרשאה לגשת לרשימת אנשי הקשר ולמיקום שלך כדי "לשפר את החוויה", למרות שזה לא קשור לתפקוד הבסיסי שלה.',
+        prompt:'מה הכי נכון?',
+        options:['לאשר הכול, אחרת האפליקציה לא תעבוד','לבדוק אם ההרשאה באמת נחוצה, ולסרב או לשאול הורה אם לא ברור','לאשר ולבטל אחר כך אם תהיה בעיה','להתקין אפליקציה אחרת בלי לבדוק'], answer:1,
+        explain:'לא כל הרשאה שאפליקציה מבקשת נחוצה לתפקוד שלה. כשמשהו לא הגיוני (משחק שמבקש גישה לאנשי קשר) — עוצרים ושואלים מבוגר.' },
+      { type:'quiz',
+        text:'אתה ממלא טופס הרשמה לתחרות אונליין שמבקש גם "שם בית הספר ומספר הכיתה" בנוסף לפרטי ההרשמה הבסיסיים.',
+        prompt:'מה הכי נכון?',
+        options:['למלא הכול כרגיל, זה רק טופס','לעצור ולשאול מבוגר אם השדות האלה באמת נחוצים לפני שממלאים','למלא שם בית ספר בדוי','לדלג על הטופס לגמרי בלי לבדוק'], answer:1,
+        explain:'פרטים כמו בית ספר וכיתה, בשילוב עם שם מלא, יכולים לזהות אותך ולמקם אותך במציאות. כשטופס מבקש יותר ממה שנראה הגיוני — בודקים עם מבוגר לפני שממלאים.' }
     ]
   },
   {
@@ -397,6 +485,18 @@ const STATIONS = [
         prompt:'מה תעשה?',
         options:['אעביר, זה מצחיק','אעביר רק לחבר אחד','לא מעביר — הפצת דבר מביך על מישהו היא פגיעה'], answer:2,
         explain:'העברת תוכן מביך על מישהו פוגעת בו בדיוק כמו לכתוב אותו בעצמך. הכי נכון לעצור את השרשרת ולא להעביר.' }
+    ],
+    extra:[
+      { type:'quiz',
+        text:'מישהו כתב עליך משהו לא נעים בקבוצת כיתה, וכולם מגיבים בלייקים.',
+        prompt:'מה הכי נכון לעשות?',
+        options:['לצאת מהקבוצה ולהתעלם מהכול','לשמור צילום מסך, לא להגיב בכעס, ולספר למבוגר שסומכים עליו','להגיב לכולם בחזרה באותו סגנון','למחוק את החשבון החברתי שלך'], answer:1,
+        explain:'שמירת הוכחה וסיפור למבוגר זו הדרך הבטוחה והיעילה ביותר. יציאה שקטה או תגובה בכעס לא פותרות את הבעיה ולפעמים מחמירות אותה.' },
+      { type:'quiz',
+        text:'ראית שחבר/ה שלך כתב/ה דבר פוגעני על ילד אחר בקבוצת וואטסאפ.',
+        prompt:'מה הכי נכון?',
+        options:['להתעלם, זה לא הבעיה שלי','לומר לחבר/ה בפרטי שזה לא בסדר, ואם זה נמשך לספר למבוגר','להצטרף כדי לא להיראות שונה','לצחוק כדי לא ליצור מתח'], answer:1,
+        explain:'גם כשחבר טוב עושה משהו לא בסדר, אפשר וכדאי להגיד את זה בעדינות. אם ההתנהגות נמשכת — זה הזמן לערב מבוגר.' }
     ]
   },
   {
@@ -433,6 +533,18 @@ const STATIONS = [
         prompt:'מה תעשה?',
         options:['אתקין הכול, אני רוצה את המשחק','אתקין רק את המשחק','לא מוריד מאתר לא מוכר — עדיף לשאול הורה'], answer:2,
         explain:'תוכנות "נוספות" מאתרים לא מוכרים יכולות להיות וירוסים. מורידים משחקים רק מחנויות רשמיות, ובאישור הורה.' }
+    ],
+    extra:[
+      { type:'quiz',
+        text:'מגיע מייל שנראה מהבנק של ההורים שלך, מבקש "ללחוץ כאן כדי לעדכן פרטים" — ואתה בטעות כבר פתחת אותו.',
+        prompt:'מה הכי נכון?',
+        options:['ללחוץ ולבדוק מה קורה','לסגור בלי ללחוץ על שום דבר, ולספר להורה על המייל','להעביר את המייל לחברים לבדוק מה דעתם','להשיב למייל ולשאול אם הוא אמיתי'], answer:1,
+        explain:'מיילים דחופים שמבקשים "לעדכן פרטים" הם לרוב פישינג. לא לוחצים על שום קישור ומראים מיד למבוגר.' },
+      { type:'quiz',
+        text:'אתה מקבל הודעה בטלפון: "קיבלת חבילה שממתינה לך — לחץ כאן לתשלום משלוח קטן".',
+        prompt:'מה הכי נכון?',
+        options:['לשלם, זה סכום קטן','לא ללחוץ ולא לשלם — לבדוק ישירות מול חברת המשלוחים הרשמית, ולספר להורה','ללחוץ רק כדי לראות מה כתוב','למחוק בלי לספר לאף אחד'], answer:1,
+        explain:'הודעות "תשלום משלוח קטן" הן הונאת פישינג נפוצה. אף חברת משלוחים אמיתית לא דורשת תשלום דרך לינק ב-SMS. לא לוחצים, ומספרים למבוגר.' }
     ]
   },
   {
@@ -471,6 +583,18 @@ const STATIONS = [
         prompt:'מה הכי נכון?',
         options:['לשתף, זה מצחיק','לשתף רק לכמה חברים','לא לשתף — הפצה כזו פוגעת, ומה שמעלים לרשת נשאר לאורך זמן'], answer:2,
         explain:'הפצת תוכן מביך פוגעת באדם וגם יכולה להישאר ברשת שנים. מה שמפרסמים היום עלול לחזור בעתיד — חושבים לפני ששולחים.' }
+    ],
+    extra:[
+      { type:'quiz',
+        text:'פרסמת סטורי, ואחרי כמה דקות שמת לב שברקע נראה תג שם עם כתובת בית הספר שלך.',
+        prompt:'מה הכי נכון?',
+        options:['להשאיר, כנראה אף אחד לא ישים לב','למחוק את הסטורי או לערוך אותו כדי להסתיר את הפרט, ולשים לב לרקע בפעם הבאה','להוסיף עוד פרטים כי זה כבר בחוץ','לשאול חברים אם זה נראה בסדר'], answer:1,
+        explain:'חשיפה בטעות של פרטים מזהים קורית לכולם. ברגע שרואים את זה — מוחקים או עורכים, ולומדים לבדוק את הרקע לפני שמפרסמים.' },
+      { type:'quiz',
+        text:'מישהו תייג אותך בפוסט ציבורי עם תמונה שלך שאתה לא רוצה שיהיה ברשת.',
+        prompt:'מה הכי נכון?',
+        options:['להתעלם, זה לא באמת בשליטה שלך','לבקש ממנו/ה להסיר את התיוג/הפוסט, ולהשתמש בהגדרות שמאשרות תיוגים לפני שהם מתפרסמים','לפרסם תמונה דומה שלו בתגובה','למחוק את כל החשבון שלך'], answer:1,
+        explain:'יש לך זכות לבקש הסרה של תוכן שלא נוח לך שיהיה ברשת. ברוב הרשתות אפשר גם להגדיר שתיוגים יידרשו אישור שלך לפני שהם מופיעים בפרופיל.' }
     ]
   }
 ];
@@ -525,6 +649,96 @@ const TOTAL = STATIONS.reduce((n,s)=>n+s.challenges.length,0);
 const LIVES = 3;
 const SAVE_KEY = 'cyberAgentsSave';
 
+/* ---------- classroom mode (optional, opt-in — only touches the network if a class code is used) ----------
+   Talks directly to Supabase's REST API (PostgREST) with plain fetch — no SDK, keeps the app dependency-free.
+   The class "code" doubles as the access secret (like a Kahoot PIN): whoever has it can join or view the roster.
+   No login, no PII beyond the display name the player already chose. */
+const SB_URL='https://kqdnvdwznyxgaxzjytjl.supabase.co';
+const SB_KEY='sb_publishable_FU3z8in7ZztjPvInBeG8Sg_nKOuwPjV';
+async function sbFetch(path, opts={}){
+  const res=await fetch(`${SB_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers:{ 'apikey':SB_KEY, 'Authorization':`Bearer ${SB_KEY}`, 'Content-Type':'application/json', ...(opts.headers||{}) }
+  });
+  if(!res.ok) throw new Error('sb '+res.status);
+  return res.status===204 ? null : res.json();
+}
+function genClassCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';  // no 0/O/1/I — easier to read/type aloud in class
+  let s=''; for(let i=0;i<6;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+async function createClass(name){
+  for(let i=0;i<5;i++){
+    const code=genClassCode();
+    try{
+      const rows=await sbFetch('classes',{method:'POST',headers:{'Prefer':'return=representation'},
+        body:JSON.stringify({code, name:(name||'').trim()||'כיתה ללא שם'})});
+      return rows[0];
+    }catch(e){ /* code collision (rare) — try another */ }
+  }
+  throw new Error('could not create class');
+}
+async function findClassByCode(code){
+  const rows=await sbFetch(`classes?code=eq.${encodeURIComponent((code||'').trim().toUpperCase())}&select=*`);
+  return rows[0]||null;
+}
+async function countStudents(classId){
+  const rows=await sbFetch(`students?class_id=eq.${classId}&select=id`);
+  return rows.length;
+}
+async function deleteClass(classId){
+  // students cascade-delete automatically (FK on delete cascade) — this removes all of the class's data.
+  await sbFetch(`classes?id=eq.${classId}`,{method:'DELETE'});
+}
+/* ---------- teacher's local class list (this device only — no login, just a memory aid) ---------- */
+const TEACHER_KEY='cyberAgentsTeacherClasses';
+function getMyClasses(){ try{ return JSON.parse(localStorage.getItem(TEACHER_KEY))||[]; }catch(e){ return []; } }
+function rememberMyClass(cls){
+  const list=getMyClasses().filter(c=>c.code!==cls.code);
+  list.unshift({code:cls.code, name:cls.name, created_at:cls.created_at});
+  try{ localStorage.setItem(TEACHER_KEY, JSON.stringify(list.slice(0,30))); }catch(e){}
+}
+function forgetMyClass(code){
+  try{ localStorage.setItem(TEACHER_KEY, JSON.stringify(getMyClasses().filter(c=>c.code!==code))); }catch(e){}
+}
+async function joinClass(code){
+  const cls=await findClassByCode(code);
+  if(!cls) return null;
+  S.classId=cls.id; S.classCode=cls.code; save();
+  return cls;
+}
+async function syncStudentProgress(){
+  if(!S.classId || !S.deviceId) return;
+  try{
+    await sbFetch('students?on_conflict=class_id,device_id',{
+      method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({
+        class_id:S.classId, device_id:S.deviceId, name:S.name||'סוכן/ת',
+        score:S.score, stations_done:S.done.length, total_stations:STATIONS.length,
+        weak_topics:S.weakTopics||[], done_stations:S.done||[]
+      })
+    });
+  }catch(e){ /* offline / unreachable — solo play is unaffected either way */ }
+}
+// Class-wide aggregate only — never returns individual names/scores (privacy: this powers the parent-facing link).
+async function loadClassResults(code){
+  const cls=await findClassByCode(code);
+  if(!cls) return null;
+  const students=await sbFetch(`students?class_id=eq.${cls.id}&select=score,stations_done,total_stations,weak_topics,done_stations`);
+  const n=students.length;
+  const avgScore=n? Math.round(students.reduce((s,x)=>s+x.score,0)/n) : 0;
+  const completedCount=students.filter(x=>x.stations_done>=x.total_stations).length;
+  const topicStats=STATIONS.map(st=>{
+    const completedIt=students.filter(x=>Array.isArray(x.done_stations)&&x.done_stations.includes(st.id));
+    const struggled=completedIt.filter(x=>Array.isArray(x.weak_topics)&&x.weak_topics.includes(st.id)).length;
+    return { id:st.id, title:st.title, icon:st.icon, color:st.color,
+      attempted:completedIt.length, struggled, pct: completedIt.length? Math.round(100*(completedIt.length-struggled)/completedIt.length) : null };
+  });
+  return { cls, n, avgScore, completedCount, topicStats };
+}
+
 /* ---------- custom icon set (replaces emoji for stage icons + popup feedback icons) ----------
    line-art style, currentColor-driven so each inherits the surrounding --c/color context. */
 const ICON_PATHS = {
@@ -548,7 +762,7 @@ function icon(key){
   return `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 }
 
-let S = { name:'', score:0, done:[], muted:false, partial:{} };
+let S = { name:'', score:0, done:[], muted:false, partial:{}, weakTopics:[], reviewDone:false };
 let cur = null; // {si, ci, lives, firstTry}
 
 const $ = s=>document.querySelector(s);
@@ -556,8 +770,16 @@ const screen = $('#screen');
 const hud = $('#hud');
 
 /* ---------- persistence (local only) ---------- */
-function load(){ try{ const d=JSON.parse(localStorage.getItem(SAVE_KEY)); if(d){S=Object.assign(S,d);} }catch(e){} if(!S.partial||typeof S.partial!=='object') S.partial={}; }
-function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays})); }catch(e){} }
+function load(){
+  try{ const d=JSON.parse(localStorage.getItem(SAVE_KEY)); if(d){S=Object.assign(S,d);} }catch(e){}
+  if(!S.partial||typeof S.partial!=='object') S.partial={};
+  if(!Array.isArray(S.weakTopics)) S.weakTopics=[];
+  if(!S.deviceId){ try{ S.deviceId=crypto.randomUUID(); }catch(e){ S.deviceId='d'+Date.now()+Math.random().toString(36).slice(2); } }
+}
+function save(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays,onboarded:S.onboarded,weakTopics:S.weakTopics,reviewDone:S.reviewDone,deviceId:S.deviceId,classId:S.classId,classCode:S.classCode})); }catch(e){}
+  if(S.classId) syncStudentProgress();
+}
 load();
 
 /* ---------- sound (Web Audio: soft, warm, generated) ---------- */
@@ -587,6 +809,15 @@ const sfx={
   wrong:()=>{ tone(392,.18,'sine',.10,0); tone(311.13,.26,'sine',.10,.12); },
   badge:()=>{[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(f,.34,'sine',.12,i*.1));},
   win:()=>{[523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>tone(f,.36,'sine',.13,i*.12));}
+};
+
+/* ---------- haptics (mobile only — no-ops silently where unsupported) ---------- */
+function buzz(pattern){ if(S.muted) return; try{ navigator.vibrate && navigator.vibrate(pattern); }catch(e){} }
+const haptic={
+  correct:()=>buzz(15),
+  wrong:()=>buzz([40,30,40]),
+  badge:()=>buzz([20,40,60]),
+  failed:()=>buzz([60,40,60,40,120])
 };
 
 /* ---------- dynamic feedback (varied & encouraging) ---------- */
@@ -663,16 +894,223 @@ function startScreen(){
       <input id="nameInput" maxlength="16" placeholder="הקלד/י את השם שלך כאן" value="${S.name==='סוכן/ת'?'':escapeHtml(S.name)}" />
       <button class="btn big" id="startBtn">${S.done.length? 'המשך משימה ▶':'התחל משימה ▶'}</button>
       ${S.done.length? `<button class="btn ghost big" id="resetBtn" style="margin-top:10px">התחל מחדש 🔄</button>`:''}
-      <div class="hint">🔐 השם נשמר רק במכשיר שלך ולא נשלח לאף אחד.</div>
+      <div class="hint">🔐 השם וההתקדמות נשמרים רק במכשיר שלך.${S.classCode?` מחובר/ת לכיתה <b>${escapeHtml(S.classCode)}</b>.`:''}</div>
       <div class="credit">נוצר ע"י אלון ואורי מרקוביץ</div>
     </div>
   `);
   const ni=$('#nameInput'); ni.focus(); ni.select();
   $('#startBtn').onclick=()=>{
     const v=$('#nameInput').value.trim();
-    S.name = v || 'סוכן/ת'; save(); sfx.click(); mapScreen();
+    S.name = v || 'סוכן/ת'; save(); sfx.click();
+    S.onboarded ? mapScreen() : onboardingScreen();
   };
-  const rb=$('#resetBtn'); if(rb) rb.onclick=()=>{ if(confirm('להתחיל את כל המשחק מחדש?')){ S.score=0;S.done=[];S.partial={};delete S.advRound;save();sfx.click();startScreen(); } };
+  const rb=$('#resetBtn'); if(rb) rb.onclick=()=>{ if(confirm('להתחיל את כל המשחק מחדש?')){ S.score=0;S.done=[];S.partial={};S.weakTopics=[];S.reviewDone=false;delete S.advRound;streak=0;save();sfx.click();startScreen(); } };
+}
+
+/* ----- Onboarding (shown once, before the first station) ----- */
+function onboardingScreen(){
+  go(`
+    <div class="card center">
+      <div class="badge-pop" style="font-size:64px;color:var(--cyan)">${icon('shield')}</div>
+      <h2 style="margin-top:8px" class="neon">ככה משחקים, ${escapeHtml(S.name)}</h2>
+      <div class="onboard-list">
+        <div class="onboard-step">
+          <div class="onboard-num" style="--c:var(--cyan)">1</div>
+          <div class="onboard-text"><b>${icon('network')} עוברים עולם־עולם</b><br>בכל עולם כמה תרחישים אמיתיים מהחיים ברשת — בוחרים תשובה ולומדים למה היא נכונה.</div>
+        </div>
+        <div class="onboard-step">
+          <div class="onboard-num" style="--c:var(--bad)">2</div>
+          <div class="onboard-text"><b>❤️ יש לך 3 חיים בכל עולם</b><br>טעות מורידה חיים ומסבירה למה — ואפשר לנסות שוב באותה שאלה.</div>
+        </div>
+        <div class="onboard-step">
+          <div class="onboard-num" style="--c:var(--yellow)">3</div>
+          <div class="onboard-text">${icon('trophy')} <b>אוספים תגים ונקודות</b><br>סיימו את כל העולמות ותקבלו תעודת סוכן/ת סייבר. אפשר גם לחזור ולתרגל.</div>
+        </div>
+      </div>
+      <button class="btn big" id="onboardBtn" style="margin-top:16px">בואו נתחיל! ▶</button>
+    </div>
+  `);
+  $('#onboardBtn').onclick=()=>{ S.onboarded=true; save(); sfx.click(); mapScreen(); };
+}
+
+/* ----- Teacher hub (hidden — reachable only via ?teacher=1, no link from the kids' UI) ----- */
+function linkFor(param, code){ return `${location.origin}${location.pathname}?${param}=${encodeURIComponent(code)}`; }
+function copyText(text, btn){
+  const flash=(msg)=>{ if(!btn) return; const orig=btn.textContent; btn.textContent=msg; setTimeout(()=>{ btn.textContent=orig; },2200); };
+  const fallback=()=>{
+    try{
+      const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+      flash('✅ הועתק!');
+    }catch(e){ flash('🔗 '+text); }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(()=>flash('✅ הועתק!')).catch(fallback);
+  else fallback();
+}
+function teacherHubScreen(){
+  go(`
+    <div class="card center">
+      <h2 class="neon">אזור מורה/ה</h2>
+      <p class="subtitle">כמו ב-Kahoot: כל כיתה מקבלת שם + קוד PIN. תלמידים לא רואים שום תפריט "מצב כיתה" — הם פשוט נכנסים דרך הקישור שתשלחו, וזהו.</p>
+      <div class="name-label" style="margin-top:14px">שם הכיתה</div>
+      <input id="classNameInput" maxlength="40" placeholder='לדוגמה: ז׳1 — מחשבים'
+        style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
+        border:2px solid var(--cyan);color:var(--ink);font-size:17px;text-align:center;font-weight:700" />
+      <button class="btn big" id="createBtn" style="margin-top:10px">➕ צור/י כיתה וקבל/י PIN</button>
+      <div class="name-label" style="margin-top:18px">יש לך כבר קוד PIN (ממכשיר אחר)?</div>
+      <input id="codeInput" maxlength="6" placeholder="לדוגמה: KX7P2M"
+        style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
+        border:2px solid var(--line);color:var(--ink);font-size:18px;text-align:center;font-weight:900;letter-spacing:4px" />
+      <button class="btn ghost big" id="viewBtn" style="margin-top:8px">טען/י לפי PIN</button>
+      <div id="myClassesWrap"></div>
+    </div>
+  `);
+  $('#createBtn').onclick=async()=>{
+    const name=$('#classNameInput').value.trim();
+    sfx.click();
+    go(`<div class="card center"><p class="subtitle">יוצר/ת כיתה…</p></div>`);
+    try{ const cls=await createClass(name); sfx.badge(); teacherClassReadyScreen(cls); }
+    catch(e){
+      go(`<div class="card center"><p class="subtitle">משהו השתבש ביצירת הכיתה (בעיית רשת). נסו שוב.</p>
+            <button class="btn big" id="backBtn" style="margin-top:10px">חזרה 🔙</button></div>`);
+      $('#backBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
+    }
+  };
+  $('#viewBtn').onclick=()=>{
+    const code=$('#codeInput').value.trim();
+    if(!code) return;
+    sfx.click(); teacherClassReadyScreen(code);
+  };
+  renderMyClassesList();
+}
+// "How many classes has this teacher started, and how many kids joined each?" — a locally-remembered
+// list (this device only, no login) with a live student count fetched per class.
+async function renderMyClassesList(){
+  const mine=getMyClasses();
+  const wrap=$('#myClassesWrap'); if(!wrap) return;
+  if(!mine.length){ wrap.innerHTML=''; return; }
+  wrap.innerHTML=`<div class="recap-title" style="margin-top:20px">📚 הכיתות שלי (${mine.length})</div>
+    <p class="subtitle" id="myClassesLoading">טוען…</p>`;
+  let counts;
+  try{
+    counts=await Promise.all(mine.map(async c=>{
+      try{ const cls=await findClassByCode(c.code); if(!cls) return {...c, n:null, gone:true};
+        const n=await countStudents(cls.id); return {...c, name:cls.name, n}; }
+      catch(e){ return {...c, n:null}; }
+    }));
+  }catch(e){ counts=mine.map(c=>({...c, n:null})); }
+  const loading=$('#myClassesLoading'); if(!loading) return;
+  loading.outerHTML=`<div class="myclass-list">${counts.map(c=>`
+    <div class="myclass-row" data-code="${escapeHtml(c.code)}" data-id="${escapeHtml(c.id||'')}">
+      <div class="myclass-info">
+        <div class="myclass-name">${escapeHtml(c.name||'כיתה')}</div>
+        <div class="myclass-code">PIN: ${escapeHtml(c.code)}</div>
+      </div>
+      <div class="myclass-count">${c.gone? 'לא נמצאה' : (c.n==null?'—':c.n+' 🧑‍🎓')}</div>
+      <button class="myclass-del" data-del="${escapeHtml(c.code)}" data-delid="${escapeHtml(c.id||'')}" title="מחק/י כיתה">🗑️</button>
+    </div>`).join('')}</div>`;
+  document.querySelectorAll('.myclass-row').forEach(row=>{
+    row.onclick=(e)=>{ if(e.target.closest('.myclass-del')) return; sfx.click(); teacherClassReadyScreen(row.dataset.code); };
+  });
+  document.querySelectorAll('.myclass-del').forEach(btn=>{
+    btn.onclick=async(e)=>{
+      e.stopPropagation();
+      const code=btn.dataset.del, id=btn.dataset.delid;
+      if(!confirm(`למחוק לצמיתות את הכיתה ${code}? כל נתוני התלמידים שהצטרפו אליה יימחקו ולא ניתן לשחזר.`)) return;
+      sfx.click();
+      forgetMyClass(code);
+      try{ if(id) await deleteClass(id); else { const cls=await findClassByCode(code); if(cls) await deleteClass(cls.id); } }
+      catch(e){ /* already forgotten locally even if the network call failed */ }
+      renderMyClassesList();
+    };
+  });
+}
+async function teacherClassReadyScreen(codeOrCls){
+  go(`<div class="card center"><p class="subtitle">טוען…</p></div>`);
+  let cls;
+  try{ cls = (typeof codeOrCls==='object') ? codeOrCls : await findClassByCode(codeOrCls); }catch(e){ cls=null; }
+  if(!cls){
+    go(`<div class="card center"><p class="subtitle">קוד לא נמצא או בעיית רשת.</p>
+          <button class="btn big" id="backBtn" style="margin-top:10px">חזרה 🔙</button></div>`);
+    $('#backBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
+    return;
+  }
+  rememberMyClass(cls);
+  const studentLink=linkFor('class',cls.code), resultsLink=linkFor('results',cls.code);
+  go(`
+    <div class="card center">
+      <h2 class="neon">${escapeHtml(cls.name||'כיתה')}</h2>
+      <div class="chip" style="--c:var(--cyan);font-size:26px;letter-spacing:5px;padding:12px 18px;margin-top:8px">${escapeHtml(cls.code)}</div>
+      <div class="name-label" style="margin-top:18px">1️⃣ שלחו לתלמידים — הצטרפות אוטומטית, בלי שום הגדרה מצידם</div>
+      <div class="link-box"><span id="studentLinkText">${escapeHtml(studentLink)}</span></div>
+      <button class="btn adv-btn big" id="copyStudentBtn" style="margin-top:8px">📋 העתק/י קישור לתלמידים</button>
+      <div class="name-label" style="margin-top:18px">2️⃣ שלחו להורים — סיכום ויזואלי של הכיתה, בלי שמות או ציונים אישיים</div>
+      <div class="link-box"><span id="resultsLinkText">${escapeHtml(resultsLink)}</span></div>
+      <button class="btn adv-btn big" id="copyResultsBtn" style="margin-top:8px">📋 העתק/י קישור להורים</button>
+      <button class="btn big" id="viewResultsBtn" style="margin-top:16px">📊 צפה/י בתוצאות עכשיו</button>
+      <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה לכל הכיתות שלי 🔙</button>
+      <button class="btn danger big" id="deleteBtn" style="margin-top:18px">🗑️ מחק/י כיתה זו לצמיתות</button>
+    </div>
+  `);
+  $('#copyStudentBtn').onclick=()=>{ sfx.click(); copyText(studentLink, $('#copyStudentBtn')); };
+  $('#copyResultsBtn').onclick=()=>{ sfx.click(); copyText(resultsLink, $('#copyResultsBtn')); };
+  $('#viewResultsBtn').onclick=()=>{ sfx.click(); classResultsScreen(cls.code); };
+  $('#backBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
+  $('#deleteBtn').onclick=async()=>{
+    if(!confirm(`למחוק לצמיתות את הכיתה "${cls.name}" (${cls.code})? כל נתוני התלמידים שהצטרפו אליה יימחקו ולא ניתן לשחזר.`)) return;
+    sfx.click();
+    forgetMyClass(cls.code);
+    try{ await deleteClass(cls.id); }catch(e){ /* already forgotten locally even if the network call failed */ }
+    teacherHubScreen();
+  };
+}
+
+/* ----- Class results — the shareable parent-facing page (?results=CODE). Class-wide only, no names. ----- */
+async function classResultsScreen(code){
+  go(`<div class="card center"><p class="subtitle">טוען תוצאות כיתה…</p></div>`);
+  let data;
+  try{ data=await loadClassResults(code); }catch(e){ data=null; }
+  if(!data){
+    go(`<div class="card center"><p class="subtitle">קוד לא נמצא או בעיית רשת. נסו שוב.</p></div>`);
+    return;
+  }
+  const {cls, n, avgScore, completedCount, topicStats}=data;
+  const ranked=topicStats.filter(t=>t.pct!=null).sort((a,b)=>b.pct-a.pct);
+  const noData=topicStats.filter(t=>t.pct==null);
+  const strongest=ranked.slice(0,1), weakest=ranked.length>1?ranked.slice(-1):[];
+  const bar=(t)=>`
+    <div class="topic-bar-row">
+      <div class="topic-bar-head">
+        <span class="topic-bar-icon" style="color:${t.color}">${icon(t.icon)}</span>
+        <span class="topic-bar-title">${escapeHtml(t.title)}</span>
+        <span class="topic-bar-pct">${t.pct}%</span>
+      </div>
+      <div class="topic-bar-track"><div class="topic-bar-fill" style="width:${t.pct}%;background:${t.color}"></div></div>
+    </div>`;
+  const noDataRow=noData.length? `<p class="subtitle" style="margin-top:10px">עוד אין מספיק נתונים על: ${noData.map(t=>escapeHtml(t.title)).join(', ')}.</p>` : '';
+  go(`
+    <div class="card">
+      <div class="chip" style="--c:var(--yellow)">📊 ${escapeHtml(cls.name||'כיתה')} · ${escapeHtml(cls.code)}</div>
+      <h2 style="margin-top:10px" class="neon">תמונת מצב — סוכני הסייבר 🛡️</h2>
+      <p class="subtitle" style="text-align:start">סיכום מצרפי של כל משתתפי הכיתה במשחק. אין כאן שמות או ציונים אישיים — רק איך הכיתה מתפקדת כקבוצה.</p>
+      <div class="stat-row" style="margin-top:10px">
+        <div class="stat"><b>${n}</b><span>משתתפים</span></div>
+        <div class="stat"><b>${completedCount}</b><span>סיימו הכול</span></div>
+        <div class="stat"><b>${avgScore}</b><span>ניקוד ממוצע</span></div>
+      </div>
+      ${n===0? `<p class="subtitle" style="margin-top:16px">עוד אף אחד לא הצטרף לכיתה הזו.</p>` : `
+      ${strongest.length?`<div class="recap-title" style="margin-top:20px">💪 הכי חזק</div>`:''}
+      ${strongest.map(bar).join('')}
+      ${weakest.length?`<div class="recap-title" style="margin-top:16px">🎯 הכי כדאי לחזק</div>`:''}
+      ${weakest.map(bar).join('')}
+      <div class="recap-title" style="margin-top:16px">🗺️ כל הנושאים</div>
+      ${ranked.map(bar).join('')}
+      ${noDataRow}`}
+      <button class="btn big" id="refreshBtn" style="margin-top:18px">🔄 רענן</button>
+      <div class="credit">סוכני הסייבר — משחק בטיחות ברשת</div>
+    </div>
+  `);
+  $('#refreshBtn').onclick=()=>{ sfx.click(); classResultsScreen(code); };
 }
 
 /* ----- Map ----- */
@@ -709,6 +1147,7 @@ function mapScreen(){
     }
   });
   const allDone = S.done.length===STATIONS.length;
+  const pendingReview = allDone && S.weakTopics && S.weakTopics.length>0 && !S.reviewDone;
   const advOn = S.advRound && S.advRound.ci < S.advRound.ids.length;
   const advLabel = advOn ? `🌟 המשך אתגר מתקדם (${S.advRound.ci}/${S.advRound.ids.length})` : (advancedMaxed() ? '🏆 האתגר המתקדם הושלם' : '🌟 אתגר מתקדם — שאלות קשות יותר');
   go(`
@@ -718,20 +1157,21 @@ function mapScreen(){
       <p class="subtitle">${allDone?('כל הכבוד, '+escapeHtml(S.name)+'! סיימת את כל התחנות 🎖️'):'עבור/י תחנה־תחנה והפוך/הפכי לסוכן/ת מוסמך/ת'}</p>
     </div>
     <div class="map">${nodes}</div>
-    ${allDone? `<button class="btn big" id="certBtn">🎖️ לתעודת הסוכן/ת</button>
+    ${allDone? `<button class="btn big" id="certBtn">${pendingReview?'📝 סבב חיזוק קצר לפני התעודה':'🎖️ לתעודת הסוכן/ת'}</button>
     <button class="btn adv-btn big" id="advBtn" style="margin-top:10px">${advLabel}</button>
     ${advOn?`<button class="btn ghost" id="advNewBtn" style="margin-top:8px">🔄 התחל סבב חדש במקום זה</button>`:''}`:''}
+    <div class="save-note">💾 ההתקדמות שלך נשמרת אוטומטית במכשיר הזה</div>
     <div class="map-footer"><button class="btn ghost" id="resetAllBtn">🗑️ אפס את כל המשחק</button></div>
   `);
   document.querySelectorAll('.station.clickable').forEach(el=>{
     el.onclick=()=>{ sfx.click(); startStation(+el.dataset.i); };
   });
-  const cb=$('#certBtn'); if(cb) cb.onclick=()=>{ sfx.click(); certScreen(); };
+  const cb=$('#certBtn'); if(cb) cb.onclick=()=>{ sfx.click(); goToCertOrReview(); };
   const ab=$('#advBtn'); if(ab) ab.onclick=()=>{ sfx.click(); openAdvanced(); };
   const anb=$('#advNewBtn'); if(anb) anb.onclick=()=>{ if(confirm('להתחיל סבב אתגר מתקדם חדש? הסבב הנוכחי בתהליך יימחק.')){ sfx.click(); startAdvanced(); } };
   $('#resetAllBtn').onclick=()=>{
     if(confirm('לאפס את כל המשחק ולהתחיל מההתחלה? כל ההתקדמות תימחק.')){
-      sfx.click(); S.score=0; S.done=[]; S.partial={}; delete S.advRound; save(); updateHUD(); startScreen();
+      sfx.click(); S.score=0; S.done=[]; S.partial={}; S.weakTopics=[]; S.reviewDone=false; delete S.advRound; streak=0; save(); updateHUD(); startScreen();
     }
   };
 }
@@ -739,14 +1179,27 @@ function mapScreen(){
 /* ----- Station flow ----- */
 let advStation=null;          // holds the virtual "advanced challenge" station object while active
 let advRoundStartScore=0;     // score snapshot at the start of an advanced round (to show round bonus)
-function curStation(){ return (cur && cur.advanced) ? advStation : (cur ? STATIONS[cur.si] : null); }
+let practiceStation=null;     // holds a shuffled-pool variant of a station while replaying it for practice
+let reviewStation=null;       // holds the virtual "weak-topic review round" station object while active
+function curStation(){
+  if(cur && cur.advanced) return advStation;
+  if(cur && cur.review) return reviewStation;
+  if(cur && cur.practice && practiceStation) return practiceStation;
+  return cur ? STATIONS[cur.si] : null;
+}
+function buildPracticeStation(st){
+  // mix the original questions with the extra pool and take a fresh random subset each replay
+  const pool=shuffle([...st.challenges, ...(st.extra||[])]);
+  return {...st, challenges:pool.slice(0, st.challenges.length)};
+}
 
 function startStation(si){
   const st=STATIONS[si];
   const practice = S.done.includes(st.id);                 // replaying a finished station = practice (no score change)
+  practiceStation = practice ? buildPracticeStation(st) : null;
   let resume = (!practice && S.partial[st.id]) ? S.partial[st.id] : 0;
   if(resume>=st.challenges.length) resume=0;
-  cur={si, ci:resume, lives:LIVES, firstTry:true, practice};
+  cur={si, ci:resume, lives:LIVES, firstTry:true, practice, hadMistake:false};
   renderChallenge();
 }
 
@@ -802,14 +1255,14 @@ function renderChallenge(){
   const st=curStation(), ch=st.challenges[cur.ci];
   cur.firstTry=true;
   if(cur.advanced){ if(S.advRound){ S.advRound.ci=cur.ci; S.advRound.lives=cur.lives; save(); } }
-  else if(!cur.practice){ S.partial[st.id]=cur.ci; save(); }  // remember where we are (resume support)
+  else if(!cur.practice && !cur.review){ S.partial[st.id]=cur.ci; save(); }  // remember where we are (resume support)
   updateHUD();
   const dots=st.challenges.map((_,i)=>`<div class="dot ${i<cur.ci?'on':''} ${i===cur.ci?'cur on':''}" style="--c:${st.color}"></div>`).join('');
   const head=`
     <div class="sticky-head">
       <div class="chal-top">
         <button class="mini-btn" id="toMapBtn">🗺️ מפה</button>
-        <div class="chip" style="--c:${st.color}">${icon(st.icon)} ${st.title}${cur.practice?' · תרגול':''}</div>
+        <div class="chip" style="--c:${st.color}">${icon(st.icon)} ${st.title}${cur.practice?' · תרגול':''}${cur.review?' · חיזוק':''}</div>
         <button class="mini-btn" id="resetStageBtn">🔄 אפס שלב</button>
       </div>
       <div class="dots">${dots}</div>
@@ -821,6 +1274,7 @@ function renderChallenge(){
     if(!confirm('להתחיל את השלב הזה מחדש מההתחלה?')) return;
     sfx.click();
     if(cur.advanced) startAdvanced();
+    else if(cur.review) startReviewRound();
     else { S.partial[st.id]=0; save(); startStation(cur.si); }
   };
 }
@@ -845,11 +1299,11 @@ function answerQuiz(pos, st, ch, order){
   const correct = pos===correctPos;
   if(correct){
     btns.forEach((b,bi)=>{ if(bi===pos)b.classList.add('correct'); else b.classList.add('dim'); });
-    sfx.correct();
+    sfx.correct(); haptic.correct();
     awardCorrect(st,ch);
   } else {
     const b=btns[pos]; b.classList.add('wrong');
-    cur.lives--; cur.firstTry=false; sfx.wrong(); updateHUD();
+    cur.lives--; cur.firstTry=false; cur.hadMistake=true; streak=0; sfx.wrong(); haptic.wrong(); updateHUD();
     showFeedback(false, ch.explain, ()=>{
       b.classList.remove('wrong');
       if(cur.lives<=0){ stationFailed(st); }
@@ -972,10 +1426,10 @@ function checkSort(st,ch){
   const items=cur._sort.items;
   const wrong = items.filter(it=>it.placed!==it.bin).length;
   if(wrong===0){
-    sfx.correct();
+    sfx.correct(); haptic.correct();
     awardCorrect(st,ch);
   } else {
-    cur.lives--; cur.firstTry=false; sfx.wrong(); updateHUD();
+    cur.lives--; cur.firstTry=false; cur.hadMistake=true; streak=0; sfx.wrong(); haptic.wrong(); updateHUD();
     // No per-item reveal — teach the principle and let them rethink (their arrangement stays).
     const hint = ch.explain + ` <b>(עדיין ${wrong} לא במקום הנכון — חשוב/י איזה צד מתאים לכל פריט.)</b>`;
     showFeedback(false, hint, ()=>{ if(cur.lives<=0){ stationFailed(st); } else $('#checkBtn').disabled=false; });
@@ -989,15 +1443,23 @@ function shortRecap(text){
   if(s.length>78) s=s.slice(0,75)+'…';
   return s;
 }
+let streak=0;                  // consecutive first-try-correct answers this session (not persisted)
+const STREAK_MILESTONE=3, STREAK_BONUS=5;
 function awardCorrect(st,ch){
   const pts = cur.practice ? 0 : (cur.advanced ? (cur.firstTry?15:8) : (cur.firstTry?10:5));
-  if(!cur.practice){ S.score+=pts; save(); updateHUD(); }
-  showFeedback(true, ch.explain, ()=>nextChallenge(st), pts);
+  let bonus=0;
+  if(cur.firstTry){
+    streak++;
+    if(!cur.practice && streak%STREAK_MILESTONE===0) bonus=STREAK_BONUS;
+  }
+  if(!cur.practice){ S.score+=pts+bonus; save(); updateHUD(); }
+  showFeedback(true, ch.explain, ()=>nextChallenge(st), pts, bonus, streak);
 }
-function showFeedback(good, text, onNext, pts){
+function showFeedback(good, text, onNext, pts, bonus, streakCount){
   document.querySelectorAll('.fb-overlay').forEach(el=>el.remove());  // guard against a stray duplicate modal
   const opener = good ? pick(CORRECT_OPENERS,_pl)(S.name) : pick(WRONG_OPENERS,_wl)(S.name);
-  const title = good ? (pts>0 ? `${opener} · +${pts} נק'` : opener) : opener;
+  const base = good ? (pts>0 ? `${opener} · +${pts} נק'` : opener) : opener;
+  const title = (good && bonus>0) ? `${base} · 🔥 רצף ${streakCount}! +${bonus}` : base;
   const ov=document.createElement('div'); ov.className='fb-overlay';
   ov.innerHTML=`
     <div class="fb-modal ${good?'good':'bad'}">
@@ -1015,9 +1477,10 @@ function nextChallenge(st){
   else renderChallenge();
 }
 function stationFailed(st){
-  const wasAdvanced=cur.advanced, si=cur.si;
+  const wasAdvanced=cur.advanced, wasReview=cur.review, si=cur.si;
   if(wasAdvanced){ delete S.advRound; save(); }
-  else if(!cur.practice){ S.partial[st.id]=0; save(); }
+  else if(!cur.practice && !wasReview){ S.partial[st.id]=0; save(); }
+  haptic.failed();
   go(`<div class="card center" style="--c:${st.color}">
         <div style="font-size:64px;display:flex;justify-content:center;color:var(--bad);filter:drop-shadow(0 0 14px var(--bad))">${icon('crackedheart')}</div>
         <h2 style="color:var(--bad)">נגמרו החיים בתחנה זו</h2>
@@ -1026,16 +1489,28 @@ function stationFailed(st){
         <button class="btn big" id="retryBtn">נסה/י את התחנה שוב 🔁</button>
         <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
       </div>`);
-  $('#retryBtn').onclick=()=>{ sfx.click(); wasAdvanced?startAdvanced():startStation(si); };
+  $('#retryBtn').onclick=()=>{ sfx.click(); wasAdvanced?startAdvanced():wasReview?startReviewRound():startStation(si); };
   $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
 }
 function stationComplete(st){
+  if(cur.review){                                            // weak-topic review round finished
+    S.reviewDone=true; S.weakTopics=[]; save();
+    cur=null; updateHUD(); sfx.win(); haptic.badge(); burst('var(--green)');
+    go(`<div class="card center" style="--c:var(--green)">
+          <div class="badge-pop" style="color:var(--green)">${icon('check')}</div>
+          <h2 style="color:var(--green);margin-top:8px" class="neon">מעולה, ${escapeHtml(S.name)}!</h2>
+          <p class="subtitle">חיזקת בדיוק את הנושאים שהיו קצת יותר מאתגרים — עכשיו הכול ברור, ומגיעה לך התעודה 🎓</p>
+          <button class="btn big" id="contBtn">🎖️ לתעודת הסוכן/ת</button>
+        </div>`);
+    $('#contBtn').onclick=()=>{ sfx.click(); certScreen(); };
+    return;
+  }
   if(cur.advanced){                                          // advanced challenge round finished
     const earned=S.score-advRoundStartScore;
     const firstTime=!S.advancedDone; S.advancedDone=true; S.advancedPlays=(S.advancedPlays||0)+1;
     const maxed = advancedMaxed();
     delete S.advRound; save();
-    cur=null; updateHUD(); sfx.win(); burst('var(--purple)'); setTimeout(()=>burst('var(--yellow)'),300);
+    cur=null; updateHUD(); sfx.win(); haptic.badge(); burst('var(--purple)'); setTimeout(()=>burst('var(--yellow)'),300);
     const praise = maxed
       ? (firstTime
           ? `מדהים, ${escapeHtml(S.name)}! 🏆 עברת בהצלחה שאלות קשות מכל ${st.challenges.length} תחומי הבטיחות — ברמה שלא כל מבוגר עומד בה. זו ההוכחה הכי טובה שאת/ה יודע/ת להגן על עצמך ברשת. תמשיכ/י ליישם את זה גם בחיים האמיתיים — זה מה שבאמת חשוב. 💙`
@@ -1060,7 +1535,7 @@ function stationComplete(st){
     return;
   }
   if(cur.practice){                                          // replay finished — celebrate, no score/badge change
-    cur=null; updateHUD(); sfx.badge(); burst(st.color);
+    cur=null; updateHUD(); sfx.badge(); haptic.badge(); burst(st.color);
     go(`<div class="card center" style="--c:${st.color}">
           <div class="badge-pop">${icon(st.icon)}</div>
           <h2 style="color:${st.color};margin-top:8px" class="neon">כל הכבוד, ${escapeHtml(S.name)}!</h2>
@@ -1072,7 +1547,8 @@ function stationComplete(st){
   }
   if(!S.done.includes(st.id)){ S.done.push(st.id); }
   delete S.partial[st.id];
-  cur=null; save(); updateHUD(); sfx.badge(); burst(st.color);
+  if(cur.hadMistake && !S.weakTopics.includes(st.id)) S.weakTopics.push(st.id);
+  cur=null; save(); updateHUD(); sfx.badge(); haptic.badge(); burst(st.color);
   const allDone=S.done.length===STATIONS.length;
   const recap = st.challenges.map((c,i)=>`<li style="animation-delay:${i*90}ms">✅ ${shortRecap(c.explain)}</li>`).join('');
   go(`<div class="card center" style="--c:${st.color}">
@@ -1088,12 +1564,37 @@ function stationComplete(st){
         <ul class="recap-list">${recap}</ul>
         <button class="btn big" id="contBtn">${allDone?'🎖️ לתעודה הסופית':'המשך למפה ▶'}</button>
       </div>`);
-  $('#contBtn').onclick=()=>{ sfx.click(); allDone?certScreen():mapScreen(); };
+  $('#contBtn').onclick=()=>{ sfx.click(); allDone?goToCertOrReview():mapScreen(); };
+}
+
+/* ----- Weak-topic review round ----- */
+function goToCertOrReview(){
+  (S.weakTopics && S.weakTopics.length>0 && !S.reviewDone) ? reviewIntroScreen() : certScreen();
+}
+function reviewIntroScreen(){
+  const topics=S.weakTopics.map(id=>STATIONS.find(s=>s.id===id)).filter(Boolean);
+  const chips=topics.map(t=>`<span class="chip" style="--c:${t.color};margin:4px">${icon(t.icon)} ${t.title}</span>`).join('');
+  go(`<div class="card center" style="--c:var(--green)">
+        <div class="badge-pop" style="color:var(--green)">${icon('shield')}</div>
+        <h2 style="margin-top:8px" class="neon">כמעט שם, ${escapeHtml(S.name)}!</h2>
+        <p class="subtitle">לפני התעודה, בואו נחזור בקצרה על ${topics.length>1?'הנושאים':'הנושא'} שהיו לך קצת יותר מאתגרים —
+        עם שאלות חדשות, כדי לוודא שהכול ברור:</p>
+        <div style="margin-top:10px">${chips}</div>
+        <button class="btn big" id="reviewBtn" style="margin-top:16px">בואו נבדוק! ▶</button>
+      </div>`);
+  $('#reviewBtn').onclick=()=>{ sfx.click(); startReviewRound(); };
+}
+function startReviewRound(){
+  const topics=S.weakTopics.map(id=>STATIONS.find(s=>s.id===id)).filter(Boolean);
+  const challenges=topics.map(st=>shuffle([...(st.extra&&st.extra.length?st.extra:st.challenges)])[0]);
+  reviewStation={ id:'review', title:'סבב חיזוק', icon:'shield', color:'var(--green)', badgeName:'סבב חיזוק', challenges };
+  cur={si:'review', ci:0, lives:LIVES, firstTry:true, practice:false, review:true, hadMistake:false};
+  renderChallenge();
 }
 
 /* ----- Certificate ----- */
 function certScreen(){
-  cur=null; updateHUD(); sfx.win(); burst('var(--yellow)'); setTimeout(()=>burst('var(--cyan)'),300);
+  cur=null; updateHUD(); sfx.win(); haptic.badge(); burst('var(--yellow)'); setTimeout(()=>burst('var(--cyan)'),300);
   const badges=STATIONS.map(s=>`<span style="color:${s.color}">${icon(s.icon)}</span>`).join('');
   go(`<div class="cert fade">
         <div class="seal">${icon('trophy')}</div>
@@ -1108,14 +1609,17 @@ function certScreen(){
           <div class="stat"><b>${TOTAL}</b><span>משימות</span></div>
         </div>
         <p class="subtitle" style="margin-top:8px">עכשיו את/ה יודע/ת לשמור על עצמך ועל חברים ברשת. שתף/י את מה שלמדת! 💙</p>
-        <button class="btn adv-btn big" id="shareBtn" style="margin-top:14px">📤 שתף/י עם חברים</button>
-        <button class="btn big" id="advBtn2" style="margin-top:10px">${advancedMaxed()?'🏆 האתגר המתקדם הושלם':'🌟 מוכן/ה לאתגר מתקדם? שאלות קשות יותר'}</button>
-        <button class="btn ghost big" id="againBtn" style="margin-top:10px">שחק/י שוב מההתחלה 🔄</button>
+        <div class="print-date">${new Date().toLocaleDateString('he-IL')}</div>
+        <button class="btn adv-btn big no-print" id="downloadBtn" style="margin-top:14px">🖨️ הדפס/י או שמור/י כ-PDF</button>
+        <button class="btn adv-btn big no-print" id="shareBtn" style="margin-top:10px">📤 שתף/י עם חברים</button>
+        <button class="btn big no-print" id="advBtn2" style="margin-top:10px">${advancedMaxed()?'🏆 האתגר המתקדם הושלם':'🌟 מוכן/ה לאתגר מתקדם? שאלות קשות יותר'}</button>
+        <button class="btn ghost big no-print" id="againBtn" style="margin-top:10px">שחק/י שוב מההתחלה 🔄</button>
         <div class="credit">נוצר ע"י אלון ואורי מרקוביץ</div>
       </div>`);
+  $('#downloadBtn').onclick=()=>{ sfx.click(); window.print(); };
   $('#shareBtn').onclick=()=>{ sfx.click(); shareGame($('#shareBtn')); };
   $('#advBtn2').onclick=()=>{ sfx.click(); openAdvanced(); };
-  $('#againBtn').onclick=()=>{ sfx.click(); if(confirm('להתחיל מחדש ולשחק שוב?')){ S.score=0;S.done=[];S.partial={};delete S.advRound;save(); startScreen(); } };
+  $('#againBtn').onclick=()=>{ sfx.click(); if(confirm('להתחיל מחדש ולשחק שוב?')){ S.score=0;S.done=[];S.partial={};S.weakTopics=[];S.reviewDone=false;delete S.advRound;streak=0;save(); startScreen(); } };
 }
 
 /* ---------- confetti ---------- */
@@ -1181,7 +1685,16 @@ window.addEventListener('error', ()=>{
 });
 
 /* ---------- boot ---------- */
-startScreen();
+(function boot(){
+  const params=new URLSearchParams(location.search);
+  const resultsCode=params.get('results'), teacherFlag=params.get('teacher'), classCode=params.get('class');
+  if(resultsCode) return classResultsScreen(resultsCode);
+  if(teacherFlag) return teacherHubScreen();
+  if(classCode){                                   // silent auto-join — no UI, kid never sees this happen
+    joinClass(classCode).then(cls=>{ if(cls) syncStudentProgress(); }).catch(()=>{});
+  }
+  startScreen();
+})();
 
 /* ---------- PWA: register service worker ---------- */
 if ('serviceWorker' in navigator) {
