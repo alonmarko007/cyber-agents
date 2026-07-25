@@ -650,7 +650,7 @@ function mapScreen(){
   });
   const allDone = S.done.length===STATIONS.length;
   const advOn = S.advRound && S.advRound.ci < S.advRound.ids.length;
-  const advLabel = advOn ? `🌟 המשך אתגר מתקדם (${S.advRound.ci}/${S.advRound.ids.length})` : '🌟 אתגר מתקדם — שאלות קשות יותר';
+  const advLabel = advOn ? `🌟 המשך אתגר מתקדם (${S.advRound.ci}/${S.advRound.ids.length})` : (advancedMaxed() ? '🏆 האתגר המתקדם הושלם' : '🌟 אתגר מתקדם — שאלות קשות יותר');
   go(`
     <div class="map-title">
       <div class="chip" style="--c:var(--cyan)">🗺️ מפת המשימות</div>
@@ -717,9 +717,24 @@ function resumeAdvanced(){
   cur={si:'adv', ci:S.advRound.ci, lives:S.advRound.lives, firstTry:true, practice:false, advanced:true};
   renderChallenge();
 }
+const ADVANCED_ROUND_LIMIT = 2;   // after this many completed rounds, the advanced challenge is finished
+function advancedMaxed(){ return (S.advancedPlays||0) >= ADVANCED_ROUND_LIMIT; }
 function openAdvanced(){
   if(S.advRound && S.advRound.ci < S.advRound.ids.length) resumeAdvanced();
+  else if(advancedMaxed()) advancedFinaleScreen();
   else startAdvanced();
+}
+function advancedFinaleScreen(){
+  go(`<div class="card center" style="--c:var(--purple)">
+        <div class="badge-pop">🏆</div>
+        <h2 style="color:var(--purple);margin-top:8px" class="neon">האתגר המתקדם הושלם!</h2>
+        <p class="subtitle">כבר עברת ${ADVANCED_ROUND_LIMIT} סבבים של האתגר המתקדם, ${escapeHtml(S.name)} — זו הרמה הגבוהה ביותר במשחק הזה. את/ה יודע/ת לזהות הונאות, לשמור על פרטיות ולחשוב לפני שלוחצים. תמשיכ/י ליישם את זה גם בחיים האמיתיים — זה מה שבאמת חשוב. 🏆💙</p>
+        <div class="stat-row"><div class="stat"><b>${S.score}</b><span>נקודות סה"כ</span></div></div>
+        <button class="btn adv-btn big" id="shareBtn">📤 שתף/י עם חברים</button>
+        <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
+      </div>`);
+  $('#shareBtn').onclick=()=>{ sfx.click(); shareGame($('#shareBtn')); };
+  $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
 }
 
 function renderChallenge(){
@@ -952,24 +967,27 @@ function stationComplete(st){
   if(cur.advanced){                                          // advanced challenge round finished
     const earned=S.score-advRoundStartScore;
     const firstTime=!S.advancedDone; S.advancedDone=true; S.advancedPlays=(S.advancedPlays||0)+1;
+    const maxed = advancedMaxed();
     delete S.advRound; save();
     cur=null; updateHUD(); sfx.win(); burst('var(--purple)'); setTimeout(()=>burst('var(--yellow)'),300);
-    const praise = firstTime
+    const praise = maxed
+      ? `זהו זה, ${escapeHtml(S.name)}! 🏆 סיימת ${ADVANCED_ROUND_LIMIT} סבבים של האתגר המתקדם — עברת שאלות קשות מכל תחומי הבטיחות, ברמה גבוהה מאוד. זו ההוכחה הכי טובה שאת/ה יודע/ת להגן על עצמך ברשת. תמשיכ/י ליישם את זה גם בחיים האמיתיים — זה מה שבאמת חשוב. 💙`
+      : firstTime
       ? `וואו, ${escapeHtml(S.name)}! 🌟 השקעת מאמץ אמיתי ועברת בהצלחה שאלות מכל ${st.challenges.length} תחומי הבטיחות — ברמה שלא כל מבוגר עומד בה. זו הוכחה שאת/ה באמת יודע/ת להגן על עצמך ברשת.`
       : `שוב הצלחת, ${escapeHtml(S.name)}! 🌟 עוד סבב, עוד הוכחה שהידע שלך על בטיחות ברשת רק מתחזק.`;
     go(`<div class="card center" style="--c:${st.color}">
-          <div class="badge-pop">🌟</div>
-          <h2 style="color:var(--purple);margin-top:8px" class="neon">${firstTime?'תג מיוחד הושג!':'סבב נוסף הושלם!'}</h2>
-          ${firstTime?`<div style="font-size:20px;font-weight:800;margin-top:6px">מומחה/ית סייבר 🌟</div>`:''}
+          <div class="badge-pop">${maxed?'🏆':'🌟'}</div>
+          <h2 style="color:var(--purple);margin-top:8px" class="neon">${maxed?'האתגר המתקדם הושלם!':(firstTime?'תג מיוחד הושג!':'סבב נוסף הושלם!')}</h2>
+          ${firstTime&&!maxed?`<div style="font-size:20px;font-weight:800;margin-top:6px">מומחה/ית סייבר 🌟</div>`:''}
           <p class="subtitle">${praise}</p>
           <div class="stat-row"><div class="stat"><b>+${earned}</b><span>נק' בסבב</span></div><div class="stat"><b>${S.score}</b><span>סה"כ</span></div></div>
-          <p class="subtitle" style="margin-top:10px">מכיר/ה עוד מישהו שכדאי לו/ה ללמוד להגן על עצמו ברשת? שתפ/י את המשחק 💙</p>
+          ${maxed?'':'<p class="subtitle" style="margin-top:10px">מכיר/ה עוד מישהו שכדאי לו/ה ללמוד להגן על עצמו ברשת? שתפ/י את המשחק 💙</p>'}
           <button class="btn adv-btn big" id="shareBtn">📤 שתף/י עם חברים</button>
-          <button class="btn big" id="advAgainBtn" style="margin-top:10px">🌟 סבב אתגר נוסף</button>
+          ${maxed?'':'<button class="btn big" id="advAgainBtn" style="margin-top:10px">🌟 סבב אתגר נוסף</button>'}
           <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
         </div>`);
     $('#shareBtn').onclick=()=>{ sfx.click(); shareGame($('#shareBtn')); };
-    $('#advAgainBtn').onclick=()=>{ sfx.click(); startAdvanced(); };
+    if(!maxed) $('#advAgainBtn').onclick=()=>{ sfx.click(); startAdvanced(); };
     $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
     return;
   }
@@ -1023,7 +1041,7 @@ function certScreen(){
         </div>
         <p class="subtitle" style="margin-top:8px">עכשיו את/ה יודע/ת לשמור על עצמך ועל חברים ברשת. שתף/י את מה שלמדת! 💙</p>
         <button class="btn adv-btn big" id="shareBtn" style="margin-top:14px">📤 שתף/י עם חברים</button>
-        <button class="btn big" id="advBtn2" style="margin-top:10px">🌟 מוכן/ה לאתגר מתקדם? שאלות קשות יותר</button>
+        <button class="btn big" id="advBtn2" style="margin-top:10px">${advancedMaxed()?'🏆 האתגר המתקדם הושלם':'🌟 מוכן/ה לאתגר מתקדם? שאלות קשות יותר'}</button>
         <button class="btn ghost big" id="againBtn" style="margin-top:10px">שחק/י שוב מההתחלה 🔄</button>
         <div class="credit">נוצר ע"י אלון ואורי מרקוביץ</div>
       </div>`);
