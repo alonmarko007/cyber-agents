@@ -35,18 +35,17 @@
     --line:rgba(120,150,220,.25);
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%}
+  html,body{margin:0;height:100%;overflow:hidden}
   html{height:-webkit-fill-available}
-  body{overscroll-behavior-y:contain}
   body{
+    height:100vh;height:100dvh;
+    overscroll-behavior:contain;
     font-family:'Segoe UI','Assistant','Arial Hebrew',system-ui,sans-serif;
     background:
       radial-gradient(1000px 600px at 80% -10%, rgba(0,229,255,.10), transparent 60%),
       radial-gradient(900px 600px at 10% 110%, rgba(179,136,255,.12), transparent 60%),
       var(--bg);
     color:var(--ink);
-    min-height:100%;
-    overflow-x:hidden;
     -webkit-tap-highlight-color:transparent;
   }
   /* subtle animated grid backdrop */
@@ -57,9 +56,13 @@
     background-size:44px 44px;
     mask:radial-gradient(circle at 50% 40%,#000,transparent 85%);
   }
-  #app{position:relative;z-index:1;max-width:820px;margin:0 auto;min-height:100%;
-       padding:calc(14px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right))
-               calc(40px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
+  /* app fills the viewport exactly; HUD stays pinned, #screen is the only scrolling region */
+  #app{position:relative;z-index:1;max-width:820px;margin:0 auto;
+       height:100vh;height:100dvh;
+       display:flex;flex-direction:column;overflow:hidden;
+       padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right))
+               calc(10px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
+  #screen{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
   canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
 
   h1,h2,h3{margin:0}
@@ -67,9 +70,9 @@
   button{font-family:inherit;cursor:pointer;border:none;color:inherit}
 
   /* ---------- HUD ---------- */
-  #hud{display:none;gap:10px;align-items:center;justify-content:space-between;
+  #hud{display:none;flex-shrink:0;gap:10px;align-items:center;justify-content:space-between;
        background:var(--panel);border:1px solid var(--line);border-radius:16px;
-       padding:10px 12px;backdrop-filter:blur(6px);margin-bottom:14px;flex-wrap:wrap}
+       padding:10px 12px;backdrop-filter:blur(6px);margin-bottom:10px;flex-wrap:wrap}
   .hud-rank{font-weight:800;font-size:14px;color:var(--cyan)}
   .hud-rank small{display:block;color:var(--muted);font-weight:600;font-size:11px}
   .hearts{font-size:20px;letter-spacing:2px;filter:drop-shadow(0 0 6px rgba(255,77,109,.6))}
@@ -143,6 +146,9 @@
   .station.clickable{cursor:pointer}
   .station.clickable:active{transform:scale(.985)}
   .map-footer{text-align:center;margin-top:6px}
+  .sticky-head{position:sticky;top:0;z-index:5;margin:-20px -20px 14px;padding:14px 20px 10px;
+       background:var(--panel);backdrop-filter:blur(8px);border-radius:20px 20px 0 0;
+       box-shadow:0 10px 14px -10px rgba(0,0,0,.35)}
   .chal-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
   .mini-btn{background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:7px 10px;
             font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
@@ -185,17 +191,24 @@
   @keyframes slideup{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
 
   /* ---------- Sort mini-game ---------- */
-  .sort-items{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0 6px;min-height:20px}
+  .sort-items{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0 6px;min-height:44px;
+              border-radius:16px;transition:outline-color .12s,background .12s}
   .sort-instr{color:var(--muted);font-size:13px;text-align:center;margin-bottom:6px}
   .item{padding:11px 15px;border-radius:14px;background:#0e1738;border:2px solid var(--line);
-        font-weight:800;font-size:15px;transition:transform .08s}
+        font-weight:800;font-size:15px;transition:transform .08s,opacity .12s;touch-action:none;cursor:grab}
   .item:active{transform:scale(.96)}
   .item.selected{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(255,213,79,.3);color:var(--yellow)}
+  .item.dragging-source{opacity:.3}
+  .item.drag-ghost{position:fixed;top:0;left:0;z-index:90;pointer-events:none;cursor:grabbing;
+        transform:scale(1.08) rotate(-2deg);box-shadow:0 14px 28px -8px rgba(0,0,0,.55);opacity:.96}
   .bins{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-  .bin{background:#0a1128;border:2px dashed var(--line);border-radius:18px;padding:12px;min-height:120px}
+  .bin{background:#0a1128;border:2px dashed var(--line);border-radius:18px;padding:12px;min-height:120px;
+       transition:border-color .12s,box-shadow .12s,background .12s}
   .bin.armed{border-color:var(--yellow);box-shadow:0 0 18px -4px var(--yellow)}
+  .bin.drag-over,.sort-items.drag-over{border-color:var(--yellow);outline:2px dashed var(--yellow);
+       box-shadow:0 0 22px -2px var(--yellow);background:rgba(255,213,79,.08)}
   .bin h4{margin:0 0 10px;text-align:center;font-size:15px}
-  .bin .drop{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  .bin .drop{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:20px}
   .binL h4{color:var(--good)} .binR h4{color:var(--bad)}
 
   /* ---------- Station complete / certificate ---------- */
@@ -434,43 +447,43 @@ const STATIONS = [
 /* ---------- Advanced Challenge pool (unlocked after certificate) ----------
    Harder, nuanced scenarios — no "obviously safe" wording, requires real judgment. */
 const ADVANCED = [
-  { type:'quiz', text:'במשחק אונליין מקפיצה הודעה: "נבדוק אם המכשיר שלך פגיע — רק תוריד את הכלי הזה." הכלי מוצג כ"שירות אבטחה רשמי", אך הקישור לא מוביל לאתר הרשמי של המשחק.',
+  { id:'adv1', type:'quiz', cat:'links', text:'במשחק אונליין מקפיצה הודעה: "נבדוק אם המכשיר שלך פגיע — רק תוריד את הכלי הזה." הכלי מוצג כ"שירות אבטחה רשמי", אך הקישור לא מוביל לאתר הרשמי של המשחק.',
     prompt:'מה הכי נכון?',
     options:['אוריד, נשמע כמו שירות טוב לבדיקת אבטחה','אשאל בקבוצת המשחק אם זה בטוח','אבדוק שהקישור מוביל בדיוק לאתר/לחנות הרשמיים — ורק אז אשקול; אחרת לא מתקינים','אתקין ואם יתברר שלא בטוח אמחק'],
     answer:2, explain:'כלי אבטחה אמיתיים מגיעים ממקור רשמי ומאומת. תוקפים בדיוק מנצלים את המסגור "בדיקת אבטחה" כדי לגרום לך להתקין תוכנה זדונית.' },
-  { type:'quiz', text:'מנהל/ת קבוצת תחביב בדיסקורד מבקש/ת ממך "תמונה אמיתית" — כי "רק חברים אמיתיים מקבלים גישה לערוץ VIP". יש לו/לה כבר גישה לפרטים בסיסיים שלך מהקבוצה.',
+  { id:'adv2', type:'quiz', cat:'social', text:'מנהל/ת קבוצת תחביב בדיסקורד מבקש/ת ממך "תמונה אמיתית" — כי "רק חברים אמיתיים מקבלים גישה לערוץ VIP". יש לו/לה כבר גישה לפרטים בסיסיים שלך מהקבוצה.',
     prompt:'מה הכי נכון?',
     options:['לשלוח תמונה, זה נשמע חשוב','לשלוח רק אליו/ה בפרטי','לסרב בנימוס ולספר למבוגר — גם אם מפסידים גישה ל"VIP"','לשלוח תמונה ישנה שלא ממש שלי'],
     answer:2, explain:'"גישה בלעדית" תמורת מדיה אישית היא טקטיקת לחץ מוכרת. גישה מיוחדת שדורשת תמונה אישית — לא שווה את הסיכון, מספרים למבוגר.' },
-  { type:'quiz', text:'מתקשר אליך מישהו שמזדהה כ"תמיכה טכנית" של פלטפורמת המשחקים, טוען שהחשבון שלך נפרץ, ומבקש שתשתף מסך "כדי לתקן זאת עכשיו".',
+  { id:'adv3', type:'quiz', cat:'links', text:'מתקשר אליך מישהו שמזדהה כ"תמיכה טכנית" של פלטפורמת המשחקים, טוען שהחשבון שלך נפרץ, ומבקש שתשתף מסך "כדי לתקן זאת עכשיו".',
     prompt:'מה תעשה?',
     options:['לשתף מסך כדי לפתור מהר','לעקוב אחרי ההוראות שלו בטלפון','לנתק, ולבדוק ישירות באתר/אפליקציה הרשמיים — ולא לשתף מסך עם מתקשר לא מזוהה','לבקש שיתקשר שוב מאוחר יותר'],
     answer:2, explain:'זו תבנית קלאסית של הונאת "תמיכה טכנית". גוף אמיתי לא ידרוש שיתוף מסך דחוף בטלפון — מנתקים ובודקים דרך הערוץ הרשמי בעצמכם.' },
-  { type:'quiz', text:'הפרופיל שלך פרטי, אבל חבר לכיתה שאישרת כעוקב משתף צילומי מסך מהסטורי הפרטי שלך עם קבוצה חיצונית.',
+  { id:'adv4', type:'quiz', cat:'bully', text:'הפרופיל שלך פרטי, אבל חבר לכיתה שאישרת כעוקב משתף צילומי מסך מהסטורי הפרטי שלך עם קבוצה חיצונית.',
     prompt:'מה הכי נכון?',
     options:['לחסום ולהתעלם, זה כבר קרה','לדבר איתו/ה ולבקש למחוק, ולשקול לספר למבוגר אם זה נמשך','לפרסם עליו/ה דברים דומים בתגובה','להפוך את הפרופיל לציבורי כי ממילא אין פרטיות'],
     answer:1, explain:'פרטי לא אומר סודי לחלוטין. מתמודדים ישירות ובבירור, לא בנקמנות — ואם זה נמשך או פוגעני, מספרים למבוגר.' },
-  { type:'quiz', text:'בשוק פריטים של משחק, שחקן/ית אחר/ת מציע/ה החלפת פריטים נדירים ומבקש/ת שתעביר/י ראשון/ה "כאות אמון".',
+  { id:'adv5', type:'quiz', cat:'strangers', text:'בשוק פריטים של משחק, שחקן/ית אחר/ת מציע/ה החלפת פריטים נדירים ומבקש/ת שתעביר/י ראשון/ה "כאות אמון".',
     prompt:'מה הכי נכון?',
     options:['אעביר ראשון/ה, הוא/היא בטח בסדר','אבקש שהוא/היא יעביר/תעביר קודם','אשתמש רק במערכת המסחר הרשמית והמאובטחת של המשחק — לא בהעברה ישירה "כאות אמון"','אבטל, כי כל מסחר מסוכן'],
     answer:2, explain:'הונאות מסחר נמנעות בכוונה ממערכות מסחר רשמיות עם הגנה מובנית. שימוש במערכת הרשמית בלבד מגן משני הצדדים.' },
-  { type:'quiz', text:'את/ה מחפש/ת להוריד תוסף (mod) פופולרי למשחק. בתוצאות החיפוש מופיעים כמה אתרים עם שם כמעט זהה לאתר הרשמי.',
+  { id:'adv6', type:'quiz', cat:'links', text:'את/ה מחפש/ת להוריד תוסף (mod) פופולרי למשחק. בתוצאות החיפוש מופיעים כמה אתרים עם שם כמעט זהה לאתר הרשמי.',
     prompt:'מה הכי נכון?',
     options:['אוריד מהתוצאה הראשונה שמופיעה','אבדוק שכתובת האתר תואמת בדיוק לאתר/לחנות הרשמיים והמוכרים — ורק משם אוריד','אוריד מהאתר עם הכי הרבה הורדות','אוריד מכמה אתרים ואשווה'],
     answer:1, explain:'אתרים עם שם דומה לאתר אמיתי ("טייפוסקווטינג") הם טריק נפוץ להפצת תוכנה זדונית. תמיד משווים את כתובת האתר במדויק לרשמית.' },
-  { type:'quiz', text:'את/ה משדר/ת שידור חי של משחק לחברים מוכרים. באמצע השידור נחשף בטעות משהו מהחדר שלך (כמו שלט עם שם רחוב).',
+  { id:'adv7', type:'quiz', cat:'info', text:'את/ה משדר/ת שידור חי של משחק לחברים מוכרים. באמצע השידור נחשף בטעות משהו מהחדר שלך (כמו שלט עם שם רחוב).',
     prompt:'מה הכי נכון?',
     options:['להמשיך, כנראה אף אחד לא שם לב','לעצור לרגע, לבדוק את הרקע, ולערוך/למחוק את הקטע לפני שמפרסמים סופית','למחוק את כל הערוץ','להמשיך אך רק להנמיך את הווליום'],
     answer:1, explain:'חשיפה לא מכוונת מרקע החדר קורית לכולם. בודקים את הרקע ועורכים/מוחקים לפני פרסום סופי — זה בדיוק מה שמומחי סייבר עושים.' },
-  { type:'quiz', text:'מודעה בתוך אפליקציה מציעה "מטבעות חינם" תמורת התחברות עם חשבון Google/Facebook האמיתי שלך לאתר צד־שלישי לא מוכר.',
+  { id:'adv8', type:'quiz', cat:'info', text:'מודעה בתוך אפליקציה מציעה "מטבעות חינם" תמורת התחברות עם חשבון Google/Facebook האמיתי שלך לאתר צד־שלישי לא מוכר.',
     prompt:'מה הכי נכון?',
     options:['אתחבר, זה חינם','אתחבר רק עם Google כי זה "בטוח יותר"','לא אתחבר עם חשבונות אמיתיים לאתר לא מוכר — ואבדוק אם ההצעה קיימת רשמית בתוך האפליקציה עצמה','אפתח חשבון גוגל נפרד רק בשביל זה'],
     answer:2, explain:'חיבור חשבון אמיתי לאתר צד־שלישי לא מוכר חושף הרשאות ומידע. בודקים הצעות "חינמיות" רק דרך הערוץ הרשמי של האפליקציה עצמה.' },
-  { type:'quiz', text:'קיבלת בקשה להצטרף לשרת דיסקורד "בלעדי" של יוצר/ת תוכן מפורסם/ת, אבל מספר החברים בשרת קטן מאוד ואין שום תיוג רשמי אליו.',
+  { id:'adv9', type:'quiz', cat:'strangers', text:'קיבלת בקשה להצטרף לשרת דיסקורד "בלעדי" של יוצר/ת תוכן מפורסם/ת, אבל מספר החברים בשרת קטן מאוד ואין שום תיוג רשמי אליו.',
     prompt:'מה הכי נכון?',
     options:['להצטרף, זה נשמע מגניב','לבדוק בערוץ הרשמי והמאומת של היוצר/ת אם השרת אכן שלו/שלה — לפני שמצטרפים ומשתפים פרטים','להצטרף ולראות מה קורה','לשתף את הקישור עם כל החברים לפני שבודקים'],
     answer:1, explain:'התחזות לדמויות מוכרות היא שיטה נפוצה למשוך קורבנות. תמיד מוודאים דרך הערוץ הרשמי והמאומת של האדם עצמו לפני שמצטרפים.' },
-  { type:'quiz', text:'קיבלת התראה שמישהו ניסה להתחבר לחשבון שלך ממדינה אחרת, ומיד אחר כך קיבלת קוד אימות (SMS) שלא ביקשת בעצמך.',
+  { id:'adv10', type:'quiz', cat:'pass', text:'קיבלת התראה שמישהו ניסה להתחבר לחשבון שלך ממדינה אחרת, ומיד אחר כך קיבלת קוד אימות (SMS) שלא ביקשת בעצמך.',
     prompt:'מה הכי נכון?',
     options:['להתעלם, זה בטח טעות','לשלוח את הקוד ל"תמיכה" שמבקשת אותו כדי "לאשר שזה אתה"','לא לשתף את הקוד עם אף אחד — ומיד לשנות סיסמה דרך האתר הרשמי','לכבות את הטלפון'],
     answer:2, explain:'קוד אימות שלא ביקשת = מישהו מנסה להיכנס לחשבון שלך ממש עכשיו. לעולם לא משתפים קוד כזה, ומחליפים סיסמה מיד דרך הערוץ הרשמי.' }
@@ -490,7 +503,7 @@ const hud = $('#hud');
 
 /* ---------- persistence (local only) ---------- */
 function load(){ try{ const d=JSON.parse(localStorage.getItem(SAVE_KEY)); if(d){S=Object.assign(S,d);} }catch(e){} if(!S.partial||typeof S.partial!=='object') S.partial={}; }
-function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial})); }catch(e){} }
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays})); }catch(e){} }
 load();
 
 /* ---------- sound (Web Audio: soft, warm, generated) ---------- */
@@ -602,7 +615,7 @@ function startScreen(){
     const v=$('#nameInput').value.trim();
     S.name = v || 'סוכן/ת'; save(); sfx.click(); mapScreen();
   };
-  const rb=$('#resetBtn'); if(rb) rb.onclick=()=>{ if(confirm('להתחיל את כל המשחק מחדש?')){ S.score=0;S.done=[];S.partial={};save();sfx.click();startScreen(); } };
+  const rb=$('#resetBtn'); if(rb) rb.onclick=()=>{ if(confirm('להתחיל את כל המשחק מחדש?')){ S.score=0;S.done=[];S.partial={};delete S.advRound;save();sfx.click();startScreen(); } };
 }
 
 /* ----- Map ----- */
@@ -636,6 +649,8 @@ function mapScreen(){
       </div>`;
   });
   const allDone = S.done.length===STATIONS.length;
+  const advOn = S.advRound && S.advRound.ci < S.advRound.ids.length;
+  const advLabel = advOn ? `🌟 המשך אתגר מתקדם (${S.advRound.ci}/${S.advRound.ids.length})` : '🌟 אתגר מתקדם — שאלות קשות יותר';
   go(`
     <div class="map-title">
       <div class="chip" style="--c:var(--cyan)">🗺️ מפת המשימות</div>
@@ -644,17 +659,19 @@ function mapScreen(){
     </div>
     <div class="map">${nodes}</div>
     ${allDone? `<button class="btn big" id="certBtn">🎖️ לתעודת הסוכן/ת</button>
-    <button class="btn adv-btn big" id="advBtn" style="margin-top:10px">🌟 אתגר מתקדם — שאלות קשות יותר</button>`:''}
+    <button class="btn adv-btn big" id="advBtn" style="margin-top:10px">${advLabel}</button>
+    ${advOn?`<button class="btn ghost" id="advNewBtn" style="margin-top:8px">🔄 התחל סבב חדש במקום זה</button>`:''}`:''}
     <div class="map-footer"><button class="btn ghost" id="resetAllBtn">🗑️ אפס את כל המשחק</button></div>
   `);
   document.querySelectorAll('.station.clickable').forEach(el=>{
     el.onclick=()=>{ sfx.click(); startStation(+el.dataset.i); };
   });
   const cb=$('#certBtn'); if(cb) cb.onclick=()=>{ sfx.click(); certScreen(); };
-  const ab=$('#advBtn'); if(ab) ab.onclick=()=>{ sfx.click(); startAdvanced(); };
+  const ab=$('#advBtn'); if(ab) ab.onclick=()=>{ sfx.click(); openAdvanced(); };
+  const anb=$('#advNewBtn'); if(anb) anb.onclick=()=>{ if(confirm('להתחיל סבב אתגר מתקדם חדש? הסבב הנוכחי בתהליך יימחק.')){ sfx.click(); startAdvanced(); } };
   $('#resetAllBtn').onclick=()=>{
     if(confirm('לאפס את כל המשחק ולהתחיל מההתחלה? כל ההתקדמות תימחק.')){
-      sfx.click(); S.score=0; S.done=[]; S.partial={}; save(); updateHUD(); startScreen();
+      sfx.click(); S.score=0; S.done=[]; S.partial={}; delete S.advRound; save(); updateHUD(); startScreen();
     }
   };
 }
@@ -673,28 +690,54 @@ function startStation(si){
   renderChallenge();
 }
 
+function pickAdvancedRound(){
+  // one question per topic category, so every round mixes ALL topics (never just one)
+  const byCat={};
+  ADVANCED.forEach(q=>{ (byCat[q.cat]=byCat[q.cat]||[]).push(q); });
+  const cats=shuffle(Object.keys(byCat));
+  return cats.map(c=>shuffle(byCat[c].slice())[0]);
+}
+function buildAdvStation(list){
+  return { id:'advanced', title:'אתגר מתקדם', emoji:'🌟', color:'var(--purple)', badge:'🌟',
+           badgeName:'מומחה/ית סייבר', challenges:list };
+}
 function startAdvanced(){
-  const n=Math.min(6, ADVANCED.length);
-  advStation={ id:'advanced', title:'אתגר מתקדם', emoji:'🌟', color:'var(--purple)', badge:'🌟',
-               badgeName:'מומחה/ית סייבר', challenges: shuffle(ADVANCED.slice()).slice(0,n) };
+  advStation=buildAdvStation(pickAdvancedRound());
   advRoundStartScore=S.score;
+  S.advRound={ids:advStation.challenges.map(c=>c.id), ci:0, lives:LIVES}; save();
   cur={si:'adv', ci:0, lives:LIVES, firstTry:true, practice:false, advanced:true};
   renderChallenge();
+}
+function resumeAdvanced(){
+  if(!S.advRound){ startAdvanced(); return; }
+  const list=S.advRound.ids.map(id=>ADVANCED.find(q=>q.id===id)).filter(Boolean);
+  if(!list.length || S.advRound.ci>=list.length){ startAdvanced(); return; }
+  advStation=buildAdvStation(list);
+  advRoundStartScore=S.score;
+  cur={si:'adv', ci:S.advRound.ci, lives:S.advRound.lives, firstTry:true, practice:false, advanced:true};
+  renderChallenge();
+}
+function openAdvanced(){
+  if(S.advRound && S.advRound.ci < S.advRound.ids.length) resumeAdvanced();
+  else startAdvanced();
 }
 
 function renderChallenge(){
   const st=curStation(), ch=st.challenges[cur.ci];
   cur.firstTry=true;
-  if(!cur.practice && !cur.advanced){ S.partial[st.id]=cur.ci; save(); } // remember where we are (resume support)
+  if(cur.advanced){ if(S.advRound){ S.advRound.ci=cur.ci; S.advRound.lives=cur.lives; save(); } }
+  else if(!cur.practice){ S.partial[st.id]=cur.ci; save(); }  // remember where we are (resume support)
   updateHUD();
   const dots=st.challenges.map((_,i)=>`<div class="dot ${i<cur.ci?'on':''} ${i===cur.ci?'cur on':''}" style="--c:${st.color}"></div>`).join('');
   const head=`
-    <div class="chal-top">
-      <button class="mini-btn" id="toMapBtn">🗺️ מפה</button>
-      <div class="chip" style="--c:${st.color}">${st.emoji} ${st.title}${cur.practice?' · תרגול':''}</div>
-      <button class="mini-btn" id="resetStageBtn">🔄 אפס שלב</button>
-    </div>
-    <div class="dots">${dots}</div>`;
+    <div class="sticky-head">
+      <div class="chal-top">
+        <button class="mini-btn" id="toMapBtn">🗺️ מפה</button>
+        <div class="chip" style="--c:${st.color}">${st.emoji} ${st.title}${cur.practice?' · תרגול':''}</div>
+        <button class="mini-btn" id="resetStageBtn">🔄 אפס שלב</button>
+      </div>
+      <div class="dots">${dots}</div>
+    </div>`;
   if(ch.type==='quiz') renderQuiz(st,ch,head);
   else renderSort(st,ch,head);
   $('#toMapBtn').onclick=()=>{ sfx.click(); mapScreen(); };
@@ -746,7 +789,7 @@ function renderSort(st,ch,head){
   go(`<div class="card" style="--c:${st.color}">
         ${head}
         <div class="scenario">${ch.text}</div>
-        <div class="sort-instr">הקש/י על פריט ואז על התיבה הנכונה 👇</div>
+        <div class="sort-instr">גררו פריט לתיבה המתאימה (ואפשר לגרור בחזרה) — או הקישו על פריט ואז על תיבה 👇</div>
         <div class="sort-items" id="pool"></div>
         <div class="bins">
           <div class="bin binL" data-bin="0"><h4>${ch.binL}</h4><div class="drop" id="d0"></div></div>
@@ -766,7 +809,7 @@ function drawSort(st){
     el.className='item'+(selected===it.idx?' selected':'');
     el.style.setProperty('--c',st.color);
     el.textContent=it.t;
-    el.onclick=(e)=>{ e.stopPropagation(); selectItem(it.idx, st); };
+    el.addEventListener('pointerdown', e=>onItemPointerDown(e, it.idx, st));
     if(it.placed===null) pool.appendChild(el);
     else $('#d'+it.placed).appendChild(el);
   });
@@ -781,6 +824,70 @@ function placeSelected(bin, st){
   const s=cur._sort; if(s.selected===null) return;
   const it=s.items.find(i=>i.idx===s.selected); it.placed=bin; s.selected=null; sfx.click(); drawSort(st);
 }
+
+/* ----- drag & drop for sort items (pointer events: mouse + touch + pen) ----- */
+const DRAG_THRESHOLD=7;
+let dragState=null;
+function onItemPointerDown(e, idx, st){
+  if(e.button!=null && e.button!==0) return;
+  const el=e.currentTarget, rect=el.getBoundingClientRect();
+  dragState={ idx, st, startX:e.clientX, startY:e.clientY,
+    offX:e.clientX-rect.left, offY:e.clientY-rect.top, w:rect.width,
+    dragging:false, ghost:null, sourceEl:el, pointerId:e.pointerId };
+  try{ el.setPointerCapture(e.pointerId); }catch(err){}
+  el.addEventListener('pointermove', onItemPointerMove);
+  el.addEventListener('pointerup', onItemPointerUp);
+  el.addEventListener('pointercancel', onItemPointerCancel);
+}
+function onItemPointerMove(e){
+  if(!dragState) return;
+  const dx=e.clientX-dragState.startX, dy=e.clientY-dragState.startY;
+  if(!dragState.dragging && Math.hypot(dx,dy)>DRAG_THRESHOLD){
+    dragState.dragging=true;
+    dragState.sourceEl.classList.add('dragging-source');
+    const g=dragState.sourceEl.cloneNode(true);
+    g.className='item drag-ghost'; g.style.width=dragState.w+'px';
+    document.body.appendChild(g); dragState.ghost=g;
+  }
+  if(dragState.dragging){
+    dragState.ghost.style.left=(e.clientX-dragState.offX)+'px';
+    dragState.ghost.style.top=(e.clientY-dragState.offY)+'px';
+    document.querySelectorAll('.bin,.sort-items').forEach(z=>z.classList.remove('drag-over'));
+    const under=document.elementFromPoint(e.clientX,e.clientY);
+    const target=under && (under.closest('.bin')||under.closest('.sort-items'));
+    if(target) target.classList.add('drag-over');
+  }
+}
+function cleanupDrag(){
+  const ds=dragState; if(!ds) return;
+  ds.sourceEl.removeEventListener('pointermove', onItemPointerMove);
+  ds.sourceEl.removeEventListener('pointerup', onItemPointerUp);
+  ds.sourceEl.removeEventListener('pointercancel', onItemPointerCancel);
+  try{ ds.sourceEl.releasePointerCapture(ds.pointerId); }catch(err){}
+  document.querySelectorAll('.bin,.sort-items').forEach(z=>z.classList.remove('drag-over'));
+  if(ds.ghost) ds.ghost.remove();
+  ds.sourceEl.classList.remove('dragging-source');
+}
+function onItemPointerUp(e){
+  if(!dragState) return;
+  const ds=dragState, wasDragging=ds.dragging;
+  cleanupDrag();
+  if(wasDragging){
+    const under=document.elementFromPoint(e.clientX,e.clientY);
+    const bin=under && under.closest('.bin');
+    const pool=under && under.closest('.sort-items');
+    const it=cur._sort.items.find(i=>i.idx===ds.idx);
+    if(bin){ it.placed=+bin.dataset.bin; sfx.click(); }
+    else if(pool){ it.placed=null; sfx.click(); }
+    cur._sort.selected=null;
+    dragState=null;
+    drawSort(ds.st);
+  } else {
+    dragState=null;
+    selectItem(ds.idx, ds.st);
+  }
+}
+function onItemPointerCancel(){ cleanupDrag(); dragState=null; }
 function checkSort(st,ch){
   const items=cur._sort.items;
   const wrong = items.filter(it=>it.placed!==it.bin).length;
@@ -828,7 +935,8 @@ function nextChallenge(st){
 }
 function stationFailed(st){
   const wasAdvanced=cur.advanced, si=cur.si;
-  if(!cur.practice && !wasAdvanced){ S.partial[st.id]=0; save(); }
+  if(wasAdvanced){ delete S.advRound; save(); }
+  else if(!cur.practice){ S.partial[st.id]=0; save(); }
   go(`<div class="card center" style="--c:${st.color}">
         <div style="font-size:70px">💔</div>
         <h2 style="color:var(--bad)">נגמרו החיים בתחנה זו</h2>
@@ -843,17 +951,24 @@ function stationFailed(st){
 function stationComplete(st){
   if(cur.advanced){                                          // advanced challenge round finished
     const earned=S.score-advRoundStartScore;
-    const firstTime=!S.advancedDone; S.advancedDone=true; S.advancedPlays=(S.advancedPlays||0)+1; save();
+    const firstTime=!S.advancedDone; S.advancedDone=true; S.advancedPlays=(S.advancedPlays||0)+1;
+    delete S.advRound; save();
     cur=null; updateHUD(); sfx.win(); burst('var(--purple)'); setTimeout(()=>burst('var(--yellow)'),300);
+    const praise = firstTime
+      ? `וואו, ${escapeHtml(S.name)}! 🌟 השקעת מאמץ אמיתי ועברת בהצלחה שאלות מכל ${st.challenges.length} תחומי הבטיחות — ברמה שלא כל מבוגר עומד בה. זו הוכחה שאת/ה באמת יודע/ת להגן על עצמך ברשת.`
+      : `שוב הצלחת, ${escapeHtml(S.name)}! 🌟 עוד סבב, עוד הוכחה שהידע שלך על בטיחות ברשת רק מתחזק.`;
     go(`<div class="card center" style="--c:${st.color}">
           <div class="badge-pop">🌟</div>
           <h2 style="color:var(--purple);margin-top:8px" class="neon">${firstTime?'תג מיוחד הושג!':'סבב נוסף הושלם!'}</h2>
           ${firstTime?`<div style="font-size:20px;font-weight:800;margin-top:6px">מומחה/ית סייבר 🌟</div>`:''}
-          <p class="subtitle">כל הכבוד, ${escapeHtml(S.name)}! עברת שאלות ברמה גבוהה ✨</p>
+          <p class="subtitle">${praise}</p>
           <div class="stat-row"><div class="stat"><b>+${earned}</b><span>נק' בסבב</span></div><div class="stat"><b>${S.score}</b><span>סה"כ</span></div></div>
-          <button class="btn big" id="advAgainBtn">🌟 סבב אתגר נוסף</button>
+          <p class="subtitle" style="margin-top:10px">מכיר/ה עוד מישהו שכדאי לו/ה ללמוד להגן על עצמו ברשת? שתפ/י את המשחק 💙</p>
+          <button class="btn adv-btn big" id="shareBtn">📤 שתף/י עם חברים</button>
+          <button class="btn big" id="advAgainBtn" style="margin-top:10px">🌟 סבב אתגר נוסף</button>
           <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
         </div>`);
+    $('#shareBtn').onclick=()=>{ sfx.click(); shareGame($('#shareBtn')); };
     $('#advAgainBtn').onclick=()=>{ sfx.click(); startAdvanced(); };
     $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
     return;
@@ -907,12 +1022,14 @@ function certScreen(){
           <div class="stat"><b>${TOTAL}</b><span>משימות</span></div>
         </div>
         <p class="subtitle" style="margin-top:8px">עכשיו את/ה יודע/ת לשמור על עצמך ועל חברים ברשת. שתף/י את מה שלמדת! 💙</p>
-        <button class="btn adv-btn big" id="advBtn2" style="margin-top:16px">🌟 מוכן/ה לאתגר מתקדם? שאלות קשות יותר</button>
+        <button class="btn adv-btn big" id="shareBtn" style="margin-top:14px">📤 שתף/י עם חברים</button>
+        <button class="btn big" id="advBtn2" style="margin-top:10px">🌟 מוכן/ה לאתגר מתקדם? שאלות קשות יותר</button>
         <button class="btn ghost big" id="againBtn" style="margin-top:10px">שחק/י שוב מההתחלה 🔄</button>
         <div class="credit">נוצר ע"י אלון ואורי מרקוביץ</div>
       </div>`);
-  $('#advBtn2').onclick=()=>{ sfx.click(); startAdvanced(); };
-  $('#againBtn').onclick=()=>{ sfx.click(); if(confirm('להתחיל מחדש ולשחק שוב?')){ S.score=0;S.done=[];S.partial={};save(); startScreen(); } };
+  $('#shareBtn').onclick=()=>{ sfx.click(); shareGame($('#shareBtn')); };
+  $('#advBtn2').onclick=()=>{ sfx.click(); openAdvanced(); };
+  $('#againBtn').onclick=()=>{ sfx.click(); if(confirm('להתחיל מחדש ולשחק שוב?')){ S.score=0;S.done=[];S.partial={};delete S.advRound;save(); startScreen(); } };
 }
 
 /* ---------- confetti ---------- */
@@ -942,6 +1059,32 @@ function tick(){
 /* ---------- utils ---------- */
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- share (Web Share API with clipboard fallback) ---------- */
+function shareGame(btn){
+  const url=location.href.split('?')[0].split('#')[0];
+  const text='סיימתי את משחק סוכני הסייבר ולמדתי איך להישאר מוגן/ת ברשת! בוא/י גם את/ה תלמד/י 🛡️';
+  const flash=(msg)=>{ if(!btn) return; const orig=btn.textContent; btn.textContent=msg; setTimeout(()=>{ btn.textContent=orig; },2600); };
+  if(navigator.share){
+    navigator.share({title:'סוכני הסייבר — משחק בטיחות ברשת', text, url}).catch(()=>{});
+    return;
+  }
+  const copyFallback=()=>{
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=text+' '+url; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      const ok=document.execCommand('copy');
+      ta.remove();
+      flash(ok? '✅ הקישור הועתק!' : ('🔗 '+url));
+    }catch(err){ flash('🔗 '+url); }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text+' '+url).then(()=>flash('✅ הקישור הועתק!')).catch(copyFallback);
+  } else {
+    copyFallback();
+  }
+}
 
 /* ---------- crash safety net: never leave the screen stuck/dead ---------- */
 window.addEventListener('error', ()=>{
