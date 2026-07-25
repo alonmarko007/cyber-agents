@@ -132,7 +132,6 @@
   /* a disabled button must not look tappable (sort "check" starts disabled, join button locks while fetching) */
   .btn:disabled{opacity:.45;cursor:not-allowed}
   .hint{color:var(--muted);font-size:12px;margin-top:12px}
-  .logo-class{font-size:.48em;display:inline-block}
   .code-err{min-height:20px;margin-top:8px;color:var(--bad);font-size:13px;font-weight:800}
   .credit{color:var(--muted);font-size:11px;margin-top:14px;opacity:.7}
   .link-btn{background:none;color:var(--muted);font-size:12px;font-weight:700;text-decoration:underline;
@@ -899,11 +898,11 @@ $('#muteBtn').onclick=()=>{ S.muted=!S.muted; save(); updateHUD(); if(!S.muted) 
 function go(html){ screen.innerHTML=html; screen.classList.remove('fade'); void screen.offsetWidth; screen.classList.add('fade'); }
 
 /* ----- Start ----- */
-// Class name renders inside the main title itself ("סוכני הסייבר — <class>"), same gradient/glow —
-// nested spans without their own background still get clipped by the ancestor's text-clip gradient.
+// Class name renders inside the main title itself ("סוכני הסייבר — <class>"), same font/size/gradient —
+// plain text in the same h1, so there's nothing to keep in sync with the base title's styling.
 function logoHtml(){
   return S.classCode
-    ? `סוֹכְנֵי הַסַּיְבֶּר <span class="logo-class">– ${escapeHtml(S.className||S.classCode)}</span>`
+    ? `סוֹכְנֵי הַסַּיְבֶּר – ${escapeHtml(S.className||S.classCode)}`
     : 'סוֹכְנֵי הַסַּיְבֶּר';
 }
 // Called once joinClass() confirms the class from the DB — updates the title in place
