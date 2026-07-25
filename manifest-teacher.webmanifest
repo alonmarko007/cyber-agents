@@ -1,0 +1,20 @@
+{
+  "name": "סוכני הסייבר — אזור מורה",
+  "short_name": "אזור מורה",
+  "description": "ניהול כיתות ותוצאות עבור סוכני הסייבר — משחק בטיחות ברשת.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "/?teacher=1",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070b18",
+  "theme_color": "#070b18",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "/icons/teacher-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/teacher-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/teacher-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/teacher-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

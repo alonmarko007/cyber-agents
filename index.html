@@ -10,15 +10,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
 <!-- PWA -->
-<link rel="manifest" href="/manifest.webmanifest">
+<link rel="manifest" href="/manifest.webmanifest" id="manifestLink">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
 <!-- iOS home-screen app -->
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" id="appleTouchIcon">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="סוכני הסייבר">
+<meta name="apple-mobile-web-app-title" content="סוכני הסייבר" id="appleTitle">
+<script>
+  /* If this page was opened via the teacher link (?teacher=1), swap the PWA identity — manifest,
+     title, and home-screen icon — BEFORE the user gets a chance to "Add to Home Screen", so the
+     saved icon/name/launch-target are teacher-specific instead of the kids' game's. */
+  if (new URLSearchParams(location.search).get('teacher')) {
+    document.title = 'סוכני הסייבר — אזור מורה';
+    document.getElementById('manifestLink').href = '/manifest-teacher.webmanifest';
+    document.getElementById('appleTouchIcon').href = '/icons/teacher-apple-touch-icon.png';
+    document.getElementById('appleTitle').content = 'אזור מורה';
+  }
+</script>
 <style>
   :root{
     --bg:#070b18;

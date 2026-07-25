@@ -1,10 +1,13 @@
 /* סוכני הסייבר — Service Worker (PWA offline shell) */
-const CACHE = 'cyber-agents-v6';
+const CACHE = 'cyber-agents-v7';
 const ASSETS = [
-  '/', '/index.html', '/manifest.webmanifest',
+  '/', '/index.html', '/manifest.webmanifest', '/manifest-teacher.webmanifest',
   '/icons/icon-192.png', '/icons/icon-512.png',
   '/icons/maskable-192.png', '/icons/maskable-512.png',
-  '/icons/apple-touch-icon.png', '/icons/favicon-32.png'
+  '/icons/apple-touch-icon.png', '/icons/favicon-32.png',
+  '/icons/teacher-icon-192.png', '/icons/teacher-icon-512.png',
+  '/icons/teacher-maskable-192.png', '/icons/teacher-maskable-512.png',
+  '/icons/teacher-apple-touch-icon.png'
 ];
 
 self.addEventListener('install', e => {
