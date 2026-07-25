@@ -842,24 +842,24 @@ const haptic={
 
 /* ---------- dynamic feedback (varied & encouraging) ---------- */
 const CORRECT_OPENERS=[
-  n=>`כל הכבוד, ${n}! 🎉`,
-  n=>`יש! זיהית נכון, ${n} 💪`,
-  n=>`מעולה, ${n}! סוכן/ת חד/ה 🕵️`,
-  n=>`בול, ${n}! ככה שומרים על עצמנו 🛡️`,
-  n=>`תשובה חכמה, ${n}! ⭐`,
-  n=>`${n}, אתה/את לומד/ת מהר ⚡`,
-  n=>`נכון מאוד, ${n} — החלטה נבונה 🧠`,
-  n=>`${n}, אלוף/ת בטיחות ברשת! 🏆`,
-  n=>`בדיוק, ${n}! ממשיכים ככה 🚀`,
-  n=>`יופי של שיקול דעת, ${n} 👏`
+  n=>`כל הכבוד, ${n}!`,
+  n=>`יש! זיהית נכון, ${n}`,
+  n=>`מעולה, ${n}! סוכן/ת חד/ה`,
+  n=>`בול, ${n}! ככה שומרים על עצמנו`,
+  n=>`תשובה חכמה, ${n}!`,
+  n=>`${n}, אתה/את לומד/ת מהר`,
+  n=>`נכון מאוד, ${n} — החלטה נבונה`,
+  n=>`${n}, אלוף/ת בטיחות ברשת!`,
+  n=>`בדיוק, ${n}! ממשיכים ככה`,
+  n=>`יופי של שיקול דעת, ${n}`
 ];
 const WRONG_OPENERS=[
-  n=>`כמעט, ${n}! בוא/י נחשוב שוב 🤔`,
-  n=>`לא נורא, ${n} — גם סוכנים לומדים מטעויות 💡`,
-  n=>`רגע, ${n}, יש כאן דרך בטוחה יותר 🧐`,
-  n=>`ננסה שוב יחד, ${n} 🤝`,
-  n=>`קרוב, ${n}! חשוב/י על זה עוד רגע 🔎`,
-  n=>`זה בסדר, ${n}, ננסה אחרת 🌱`
+  n=>`כמעט, ${n}! בוא/י נחשוב שוב`,
+  n=>`לא נורא, ${n} — גם סוכנים לומדים מטעויות`,
+  n=>`רגע, ${n}, יש כאן דרך בטוחה יותר`,
+  n=>`ננסה שוב יחד, ${n}`,
+  n=>`קרוב, ${n}! חשוב/י על זה עוד רגע`,
+  n=>`זה בסדר, ${n}, ננסה אחרת`
 ];
 let _pl={v:-1}, _wl={v:-1};
 function pick(arr,ref){ let i; do{ i=Math.floor(Math.random()*arr.length); }while(arr.length>1 && i===ref.v); ref.v=i; return arr[i]; }
@@ -1564,7 +1564,7 @@ function showFeedback(good, text, onNext, pts, bonus, streakCount){
   document.querySelectorAll('.fb-overlay').forEach(el=>el.remove());  // guard against a stray duplicate modal
   const opener = good ? pick(CORRECT_OPENERS,_pl)(S.name) : pick(WRONG_OPENERS,_wl)(S.name);
   const base = good ? (pts>0 ? `${opener} · +${pts} נק'` : opener) : opener;
-  const title = (good && bonus>0) ? `${base} · 🔥 רצף ${streakCount}! +${bonus}` : base;
+  const title = (good && bonus>0) ? `${base} · רצף ${streakCount}! +${bonus}` : base;
   const ov=document.createElement('div'); ov.className='fb-overlay';
   ov.innerHTML=`
     <div class="fb-modal ${good?'good':'bad'}">
