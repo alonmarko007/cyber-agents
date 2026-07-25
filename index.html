@@ -6,6 +6,9 @@
 <title>סוכני הסייבר — משחק בטיחות ברשת</title>
 <meta name="description" content="משחק חינוכי ללימוד בטיחות ברשת לבני נוער בגיל 13.">
 <meta name="theme-color" content="#070b18">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
 <!-- PWA -->
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
@@ -40,7 +43,7 @@
   body{
     height:100vh;height:100dvh;
     overscroll-behavior:contain;
-    font-family:'Segoe UI','Assistant','Arial Hebrew',system-ui,sans-serif;
+    font-family:'Assistant','Segoe UI','Arial Hebrew',system-ui,sans-serif;
     background:
       radial-gradient(1000px 600px at 80% -10%, rgba(0,229,255,.10), transparent 60%),
       radial-gradient(900px 600px at 10% 110%, rgba(179,136,255,.12), transparent 60%),
@@ -62,7 +65,8 @@
        display:flex;flex-direction:column;overflow:hidden;
        padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right))
                calc(10px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
-  #screen{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  #screen{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+          display:flex;flex-direction:column}
   canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
 
   h1,h2,h3{margin:0}
@@ -83,11 +87,15 @@
   .xpfill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--purple));
           box-shadow:0 0 12px var(--cyan);transition:width .5s cubic-bezier(.2,.8,.2,1)}
   .xplabel{font-size:10px;color:var(--muted);margin-top:3px;text-align:center}
-  #muteBtn{background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:16px}
+  #muteBtn{background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:16px;
+           min-width:44px;min-height:44px;display:grid;place-items:center}
 
   .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px;
-        backdrop-filter:blur(6px)}
+        backdrop-filter:blur(6px);flex-shrink:0}
   .center{text-align:center}
+  /* short "modal-style" cards (start/certificate/completion) center in the viewport when they
+     don't fill it; auto margins collapse to 0 (normal top flow) once content overflows */
+  .card.center,.cert{margin-block:auto}
 
   /* ---------- Start screen ---------- */
   .logo{font-size:clamp(30px,9vw,54px);font-weight:900;line-height:1.05;
@@ -122,24 +130,30 @@
 
   /* ---------- Map ---------- */
   .map-title{text-align:center;margin-bottom:6px}
-  .map{position:relative;margin-top:16px}
+  .map{position:relative;margin:16px 0}
   .station{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);
-    border-radius:20px;padding:14px 16px;margin:0 0 16px;position:relative;transition:transform .1s;
+    border-radius:20px;padding:14px 16px;margin:0;position:relative;transition:transform .1s;
     border-inline-start:6px solid var(--c)}
   .station.playable{cursor:pointer;box-shadow:0 0 0 1px var(--c),0 0 26px -6px var(--c)}
   .station.playable:active{transform:scale(.98)}
   .station.locked{opacity:.5;filter:grayscale(.4)}
   .station.done{}
   .st-emoji{font-size:38px;width:60px;height:60px;flex:0 0 60px;display:grid;place-items:center;
-    background:#0a1128;border-radius:16px;border:1px solid var(--line)}
+    background:#0a1128;border-radius:16px;border:1px solid var(--line);position:relative;z-index:1}
   .st-body{flex:1;min-width:0}
   .st-body h3{font-size:17px;color:var(--c)}
   .st-body p{margin:3px 0 0;color:var(--muted);font-size:13px}
   .st-badge{font-size:30px;filter:drop-shadow(0 0 8px var(--c))}
   .st-lock{font-size:22px;color:var(--muted)}
   .st-play{font-weight:900;color:var(--c);font-size:14px;white-space:nowrap}
-  .connector{position:absolute;inset-inline-start:44px;width:3px;background:
-     repeating-linear-gradient(var(--line),var(--line) 6px,transparent 6px,transparent 12px);z-index:-1}
+  /* connecting trail between stations: mirrors .station's box model (border-inline-start + padding)
+     so the line lands exactly under the icon column, regardless of card height/text wrap */
+  .path-seg{display:flex;height:26px;box-sizing:border-box;
+    border-inline-start:6px solid transparent;padding-inline:16px}
+  .path-seg-track{flex:0 0 60px;display:flex;justify-content:center}
+  .path-seg-line{width:4px;border-radius:2px;background:
+     repeating-linear-gradient(var(--line),var(--line) 5px,transparent 5px,transparent 10px)}
+  .path-seg-line.filled{background:var(--c);box-shadow:0 0 10px -2px var(--c)}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 1px var(--c),0 0 26px -6px var(--c)}
                    50%{box-shadow:0 0 0 2px var(--c),0 0 34px 0px var(--c)}}
   .station.next{animation:pulse 1.6s infinite}
@@ -151,7 +165,8 @@
        box-shadow:0 10px 14px -10px rgba(0,0,0,.35)}
   .chal-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
   .mini-btn{background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:7px 10px;
-            font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
+            font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap;
+            min-height:44px;display:inline-flex;align-items:center}
   .mini-btn:active{transform:scale(.94)}
 
   /* ---------- Challenge ---------- */
@@ -216,7 +231,7 @@
   @keyframes pop{from{transform:scale(0) rotate(-25deg)}to{transform:scale(1)}}
   .cert{border:3px solid var(--yellow);border-radius:24px;padding:26px 20px;text-align:center;
         background:radial-gradient(circle at 50% 0%,rgba(255,213,79,.14),transparent 70%),var(--panel-solid);
-        box-shadow:0 0 40px -8px var(--yellow)}
+        box-shadow:0 0 40px -8px var(--yellow);flex-shrink:0}
   .cert .seal{font-size:64px;filter:drop-shadow(0 0 16px var(--yellow))}
   .cert .name{font-size:30px;font-weight:900;color:var(--yellow);margin:8px 0}
   .cert .badges{font-size:34px;letter-spacing:6px;margin:14px 0}
@@ -227,6 +242,13 @@
 
   .fade{animation:fade .35s}
   @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+      transition-duration:.001ms!important;scroll-behavior:auto!important}
+    .station.next{animation:none;box-shadow:0 0 0 2px var(--c),0 0 26px -6px var(--c)}
+    .agent-emoji{animation:none}
+  }
 </style>
 </head>
 <body>
@@ -240,7 +262,7 @@
       <div class="xplabel" id="xpLabel">0 / 27 משימות</div>
     </div>
     <div class="hud-score"><span id="hudScore">0</span><small> נק'</small></div>
-    <button id="muteBtn" title="צליל">🔊</button>
+    <button id="muteBtn" title="צליל" aria-label="השתקת צליל">🔊</button>
   </div>
   <div id="screen"></div>
 </div>
@@ -569,6 +591,7 @@ function updateHUD(){
   $('#xpFill').style.width = (doneCount/TOTAL*100)+'%';
   $('#xpLabel').textContent = doneCount+' / '+TOTAL+' משימות';
   $('#muteBtn').textContent = S.muted ? '🔇' : '🔊';
+  $('#muteBtn').setAttribute('aria-label', S.muted ? 'הפעלת צליל' : 'השתקת צליל');
   if(cur){ $('#hudHearts').textContent = '❤️'.repeat(cur.lives)+'🖤'.repeat(LIVES-cur.lives); $('#hudHearts').style.visibility='visible'; }
   else { $('#hudHearts').style.visibility='hidden'; }
 }
@@ -647,6 +670,9 @@ function mapScreen(){
         </div>
         ${right}
       </div>`;
+    if(i<STATIONS.length-1){                     // trail segment down to the next station — lit up once this one is done
+      nodes += `<div class="path-seg"><div class="path-seg-track"><div class="path-seg-line ${done?'filled':''}" style="--c:${st.color}"></div></div></div>`;
+    }
   });
   const allDone = S.done.length===STATIONS.length;
   const advOn = S.advRound && S.advRound.ci < S.advRound.ids.length;
@@ -1054,7 +1080,9 @@ function certScreen(){
 const cv=$('#confetti'), cx=cv.getContext('2d'); let parts=[];
 function sz(){ cv.width=innerWidth; cv.height=innerHeight; } sz(); addEventListener('resize',sz);
 function cssColor(v){ if(v&&v.startsWith('var(')){ return getComputedStyle(document.documentElement).getPropertyValue(v.slice(4,-1)).trim()||'#fff'; } return v||'#fff'; }
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function burst(color){
+  if(reduceMotion) return;
   const col=cssColor(color); const cols=[col,'#ffd54f','#00e5ff','#b388ff','#ff5c8a','#00e676'];
   for(let i=0;i<140;i++) parts.push({
     x:innerWidth/2+(Math.random()-.5)*120, y:innerHeight*0.35,
