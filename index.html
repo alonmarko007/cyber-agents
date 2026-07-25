@@ -130,9 +130,7 @@
   .btn.ghost{background:#0e1738;color:var(--ink);box-shadow:0 6px 0 #060c22;border:1px solid var(--line)}
   .btn.ghost:active{box-shadow:0 2px 0 #060c22}
   .hint{color:var(--muted);font-size:12px;margin-top:12px}
-  .class-banner{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:9px 16px;border-radius:99px;
-    background:rgba(0,229,255,.1);border:1.5px solid var(--cyan);color:var(--cyan);font-weight:800;font-size:14px;
-    box-shadow:0 0 16px -6px var(--cyan)}
+  .logo-class{font-size:.48em;display:inline-block}
   .credit{color:var(--muted);font-size:11px;margin-top:14px;opacity:.7}
   .link-btn{background:none;color:var(--muted);font-size:12px;font-weight:700;text-decoration:underline;
             padding:8px;margin-top:8px;min-height:44px}
@@ -898,29 +896,37 @@ $('#muteBtn').onclick=()=>{ S.muted=!S.muted; save(); updateHUD(); if(!S.muted) 
 function go(html){ screen.innerHTML=html; screen.classList.remove('fade'); void screen.offsetWidth; screen.classList.add('fade'); }
 
 /* ----- Start ----- */
-function classBannerHtml(){
-  return S.classCode? `<div class="class-banner">🏫 משחק/ת בתור כיתת <b>${escapeHtml(S.className||S.classCode)}</b></div>` : '';
+// Class name renders inside the main title itself ("סוכני הסייבר — <class>"), same gradient/glow —
+// nested spans without their own background still get clipped by the ancestor's text-clip gradient.
+function logoHtml(){
+  return S.classCode
+    ? `סוֹכְנֵי הַסַּיְבֶּר <span class="logo-class">– ${escapeHtml(S.className||S.classCode)}</span>`
+    : 'סוֹכְנֵי הַסַּיְבֶּר';
 }
-// Called once joinClass() confirms the class from the DB — updates the banner in place
+// Called once joinClass() confirms the class from the DB — updates the title in place
 // (without a full re-render, so it doesn't clobber a name the kid may already be typing).
-function refreshClassBanner(){
-  const el=$('#classBanner'); if(el) el.innerHTML=classBannerHtml();
+function refreshLogo(){
+  const el=$('#logoTitle'); if(el) el.innerHTML=logoHtml();
 }
 function startScreen(){
   cur=null; updateHUD(); hud.style.display='none';
   go(`
     <div class="card center">
       <img class="agent-emoji" src="/icons/icon-512.png" width="88" height="88" alt="סוכן/ת סייבר">
-      <h1 class="logo">סוֹכְנֵי הַסַּיְבֶּר</h1>
+      <h1 class="logo" id="logoTitle">${logoHtml()}</h1>
       <div class="subtitle">משחק הבטיחות ברשת</div>
       <div style="margin-top:10px">
         <span class="tag">${icon('lock')} סיסמאות</span><span class="tag">${icon('stranger')} זרים</span>
         <span class="tag">${icon('shield')} מידע אישי</span><span class="tag">${icon('chat')} בריונות</span>
         <span class="tag">${icon('phishing')} קישורים חשודים</span><span class="tag">${icon('network')} רשתות חברתיות</span>
       </div>
-      <div id="classBanner">${classBannerHtml()}</div>
       <label for="nameInput" class="name-label">✍️ קודם כל, איך קוראים לך?</label>
       <input id="nameInput" maxlength="16" placeholder="הקלד/י את השם שלך כאן" value="${S.name==='סוכן/ת'?'':escapeHtml(S.name)}" />
+      ${!S.classCode? `
+      <label for="classCodeInput" class="name-label" style="margin-top:14px;font-size:13px">🏫 קוד כיתה מהמורה (לא חובה)</label>
+      <input id="classCodeInput" maxlength="6" placeholder="לדוגמה: KX7P2M"
+        style="width:100%;margin-top:6px;padding:11px;border-radius:12px;background:#0a1128;
+        border:2px solid var(--line);color:var(--ink);font-size:15px;text-align:center;font-weight:800;letter-spacing:3px" />` : ''}
       <button class="btn big" id="startBtn">${S.done.length? 'המשך משימה ▶':'התחל משימה ▶'}</button>
       ${S.done.length? `<button class="btn ghost big" id="resetBtn" style="margin-top:10px">התחל מחדש 🔄</button>`:''}
       <div class="hint">🔐 השם וההתקדמות נשמרים רק במכשיר שלך.</div>
@@ -928,9 +934,24 @@ function startScreen(){
     </div>
   `);
   const ni=$('#nameInput'); ni.focus(); ni.select();
-  $('#startBtn').onclick=()=>{
+  $('#startBtn').onclick=async()=>{
     const v=$('#nameInput').value.trim();
-    S.name = v || 'סוכן/ת'; save(); sfx.click();
+    S.name = v || 'סוכן/ת'; sfx.click();
+    const codeInput=$('#classCodeInput');
+    const code=codeInput? codeInput.value.trim() : '';
+    if(code && !S.classCode){
+      const btn=$('#startBtn'); const origLabel=btn.textContent;
+      btn.disabled=true; btn.textContent='מצטרף/ת לכיתה…';
+      let cls=null;
+      try{ cls=await joinClass(code); }catch(e){}
+      if(!cls){
+        btn.disabled=false; btn.textContent=origLabel;
+        codeInput.style.borderColor='var(--bad)'; codeInput.focus();
+        alert('קוד הכיתה לא נמצא. אפשר לבדוק שוב עם המורה, או להשאיר ריק ולשחק בלי כיתה.');
+        return;
+      }
+    }
+    save();
     S.onboarded ? mapScreen() : onboardingScreen();
   };
   const rb=$('#resetBtn'); if(rb) rb.onclick=()=>{ if(confirm('להתחיל את כל המשחק מחדש?')){ S.score=0;S.done=[];S.partial={};S.weakTopics=[];S.reviewDone=false;delete S.advRound;streak=0;save();sfx.click();startScreen(); } };
@@ -1280,11 +1301,9 @@ function advancedFinaleScreen(){
         <p class="subtitle">כבר עברת ${roundsPhrase(ADVANCED_ROUND_LIMIT)} של האתגר המתקדם, ${escapeHtml(S.name)} — זו הרמה הגבוהה ביותר במשחק הזה. את/ה יודע/ת לזהות הונאות, לשמור על פרטיות ולחשוב לפני שלוחצים. תמשיכ/י ליישם את זה גם בחיים האמיתיים — זה מה שבאמת חשוב. 🏆💙</p>
         <div class="stat-row"><div class="stat"><b>${S.score}</b><span>נקודות סה"כ</span></div></div>
         <button class="btn adv-btn big" id="downloadAdvBtn">⬇️ הורד/י תעודת אתגר מתקדם</button>
-        <button class="btn adv-btn big" id="shareBtn" style="margin-top:10px">📤 שתף/י עם חברים</button>
         <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
       </div>`);
   $('#downloadAdvBtn').onclick=()=>{ sfx.click(); downloadAdvancedCertificate(); };
-  $('#shareBtn').onclick=()=>{ sfx.click(); shareGame($('#shareBtn')); };
   $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
 }
 function downloadAdvancedCertificate(){
@@ -1571,13 +1590,10 @@ function stationComplete(st){
           <p class="subtitle">${praise}</p>
           <div class="stat-row"><div class="stat"><b>+${earned}</b><span>נק' בסבב</span></div><div class="stat"><b>${S.score}</b><span>סה"כ</span></div></div>
           ${maxed?'<button class="btn adv-btn big" id="downloadAdvBtn">⬇️ הורד/י תעודת אתגר מתקדם</button>':''}
-          ${maxed?'':'<p class="subtitle" style="margin-top:10px">מכיר/ה עוד מישהו שכדאי לו/ה ללמוד להגן על עצמו ברשת? שתפ/י את המשחק 💙</p>'}
-          <button class="btn adv-btn big" id="shareBtn" style="margin-top:10px">📤 שתף/י עם חברים</button>
           ${maxed?'':'<button class="btn big" id="advAgainBtn" style="margin-top:10px">🌟 סבב אתגר נוסף</button>'}
           <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
         </div>`);
     const dab=$('#downloadAdvBtn'); if(dab) dab.onclick=()=>{ sfx.click(); downloadAdvancedCertificate(); };
-    $('#shareBtn').onclick=()=>{ sfx.click(); shareGame($('#shareBtn')); };
     if(!maxed) $('#advAgainBtn').onclick=()=>{ sfx.click(); startAdvanced(); };
     $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
     return;
@@ -1757,8 +1773,6 @@ function certScreen(){
         <p class="subtitle" style="margin-top:8px">עכשיו את/ה יודע/ת לשמור על עצמך ועל חברים ברשת. שתף/י את מה שלמדת! 💙</p>
         <div class="print-date">${new Date().toLocaleDateString('he-IL')}</div>
         <button class="btn adv-btn big no-print" id="downloadBtn" style="margin-top:14px">⬇️ הורד/י תעודה כתמונה</button>
-        <button class="link-btn no-print" id="printBtn">🖨️ הדפסה</button>
-        <button class="btn adv-btn big no-print" id="shareBtn" style="margin-top:10px">📤 שתף/י עם חברים</button>
         <button class="btn big no-print" id="advBtn2" style="margin-top:10px">${advancedMaxed()?'🏆 האתגר המתקדם הושלם':'🌟 מוכן/ה לאתגר מתקדם? שאלות קשות יותר'}</button>
         <button class="btn ghost big no-print" id="againBtn" style="margin-top:10px">שחק/י שוב מההתחלה 🔄</button>
         <div class="credit">נוצר ע"י אלון ואורי מרקוביץ</div>
@@ -1773,8 +1787,6 @@ function certScreen(){
       dateStr:new Date().toLocaleDateString('he-IL')
     }, `תעודת-סוכן-סייבר-${S.name}.png`);
   };
-  $('#printBtn').onclick=()=>{ sfx.click(); window.print(); };
-  $('#shareBtn').onclick=()=>{ sfx.click(); shareGame($('#shareBtn')); };
   $('#advBtn2').onclick=()=>{ sfx.click(); openAdvanced(); };
   $('#againBtn').onclick=()=>{ sfx.click(); if(confirm('להתחיל מחדש ולשחק שוב?')){ S.score=0;S.done=[];S.partial={};S.weakTopics=[];S.reviewDone=false;delete S.advRound;streak=0;save(); startScreen(); } };
 }
@@ -1809,32 +1821,6 @@ function tick(){
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-/* ---------- share (Web Share API with clipboard fallback) ---------- */
-function shareGame(btn){
-  const url=location.href.split('?')[0].split('#')[0];
-  const text='סיימתי את משחק סוכני הסייבר ולמדתי איך להישאר מוגן/ת ברשת! בוא/י גם את/ה תלמד/י 🛡️';
-  const flash=(msg)=>{ if(!btn) return; const orig=btn.textContent; btn.textContent=msg; setTimeout(()=>{ btn.textContent=orig; },2600); };
-  if(navigator.share){
-    navigator.share({title:'סוכני הסייבר — משחק בטיחות ברשת', text, url}).catch(()=>{});
-    return;
-  }
-  const copyFallback=()=>{
-    try{
-      const ta=document.createElement('textarea');
-      ta.value=text+' '+url; ta.style.position='fixed'; ta.style.opacity='0';
-      document.body.appendChild(ta); ta.select();
-      const ok=document.execCommand('copy');
-      ta.remove();
-      flash(ok? '✅ הקישור הועתק!' : ('🔗 '+url));
-    }catch(err){ flash('🔗 '+url); }
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text+' '+url).then(()=>flash('✅ הקישור הועתק!')).catch(copyFallback);
-  } else {
-    copyFallback();
-  }
-}
-
 /* ---------- crash safety net: never leave the screen stuck/dead ---------- */
 window.addEventListener('error', ()=>{
   if(document.querySelector('.fb-overlay')) return; // don't fight an open feedback modal
@@ -1852,7 +1838,7 @@ window.addEventListener('error', ()=>{
     // visibly ties back to the class the teacher named — no need to wait on the join fetch.
     if(classNameParam){ S.classCode=classCode; S.className=classNameParam; save(); }
     joinClass(classCode).then(cls=>{
-      if(cls){ syncStudentProgress(); refreshClassBanner(); }
+      if(cls){ syncStudentProgress(); refreshLogo(); }
     }).catch(()=>{});
   }
   startScreen();
