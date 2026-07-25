@@ -130,6 +130,9 @@
   .btn.ghost{background:#0e1738;color:var(--ink);box-shadow:0 6px 0 #060c22;border:1px solid var(--line)}
   .btn.ghost:active{box-shadow:0 2px 0 #060c22}
   .hint{color:var(--muted);font-size:12px;margin-top:12px}
+  .class-banner{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:9px 16px;border-radius:99px;
+    background:rgba(0,229,255,.1);border:1.5px solid var(--cyan);color:var(--cyan);font-weight:800;font-size:14px;
+    box-shadow:0 0 16px -6px var(--cyan)}
   .credit{color:var(--muted);font-size:11px;margin-top:14px;opacity:.7}
   .link-btn{background:none;color:var(--muted);font-size:12px;font-weight:700;text-decoration:underline;
             padding:8px;margin-top:8px;min-height:44px}
@@ -721,7 +724,7 @@ function forgetMyClass(code){
 async function joinClass(code){
   const cls=await findClassByCode(code);
   if(!cls) return null;
-  S.classId=cls.id; S.classCode=cls.code; save();
+  S.classId=cls.id; S.classCode=cls.code; S.className=cls.name; save();
   return cls;
 }
 async function syncStudentProgress(){
@@ -794,7 +797,7 @@ function load(){
   if(!S.deviceId){ try{ S.deviceId=crypto.randomUUID(); }catch(e){ S.deviceId='d'+Date.now()+Math.random().toString(36).slice(2); } }
 }
 function save(){
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays,onboarded:S.onboarded,weakTopics:S.weakTopics,reviewDone:S.reviewDone,deviceId:S.deviceId,classId:S.classId,classCode:S.classCode})); }catch(e){}
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays,onboarded:S.onboarded,weakTopics:S.weakTopics,reviewDone:S.reviewDone,deviceId:S.deviceId,classId:S.classId,classCode:S.classCode,className:S.className})); }catch(e){}
   if(S.classId) syncStudentProgress();
 }
 load();
@@ -895,6 +898,14 @@ $('#muteBtn').onclick=()=>{ S.muted=!S.muted; save(); updateHUD(); if(!S.muted) 
 function go(html){ screen.innerHTML=html; screen.classList.remove('fade'); void screen.offsetWidth; screen.classList.add('fade'); }
 
 /* ----- Start ----- */
+function classBannerHtml(){
+  return S.classCode? `<div class="class-banner">🏫 משחק/ת בתור כיתת <b>${escapeHtml(S.className||S.classCode)}</b></div>` : '';
+}
+// Called once joinClass() confirms the class from the DB — updates the banner in place
+// (without a full re-render, so it doesn't clobber a name the kid may already be typing).
+function refreshClassBanner(){
+  const el=$('#classBanner'); if(el) el.innerHTML=classBannerHtml();
+}
 function startScreen(){
   cur=null; updateHUD(); hud.style.display='none';
   go(`
@@ -907,11 +918,12 @@ function startScreen(){
         <span class="tag">${icon('shield')} מידע אישי</span><span class="tag">${icon('chat')} בריונות</span>
         <span class="tag">${icon('phishing')} קישורים חשודים</span><span class="tag">${icon('network')} רשתות חברתיות</span>
       </div>
+      <div id="classBanner">${classBannerHtml()}</div>
       <label for="nameInput" class="name-label">✍️ קודם כל, איך קוראים לך?</label>
       <input id="nameInput" maxlength="16" placeholder="הקלד/י את השם שלך כאן" value="${S.name==='סוכן/ת'?'':escapeHtml(S.name)}" />
       <button class="btn big" id="startBtn">${S.done.length? 'המשך משימה ▶':'התחל משימה ▶'}</button>
       ${S.done.length? `<button class="btn ghost big" id="resetBtn" style="margin-top:10px">התחל מחדש 🔄</button>`:''}
-      <div class="hint">🔐 השם וההתקדמות נשמרים רק במכשיר שלך.${S.classCode?` מחובר/ת לכיתה <b>${escapeHtml(S.classCode)}</b>.`:''}</div>
+      <div class="hint">🔐 השם וההתקדמות נשמרים רק במכשיר שלך.</div>
       <div class="credit">נוצר ע"י אלון ואורי מרקוביץ</div>
     </div>
   `);
@@ -952,6 +964,9 @@ function onboardingScreen(){
 
 /* ----- Teacher hub (hidden — reachable only via ?teacher=1, no link from the kids' UI) ----- */
 function linkFor(param, code){ return `${location.origin}${location.pathname}?${param}=${encodeURIComponent(code)}`; }
+// Student link carries the class name too (?cn=) so a joining kid sees "כיתת X" instantly,
+// without waiting on the join fetch to resolve — pure display hint, joinClass() re-confirms it from the DB.
+function studentLinkFor(cls){ return `${linkFor('class',cls.code)}&cn=${encodeURIComponent(cls.name||'')}`; }
 function copyText(text, btn){
   const flash=(msg)=>{ if(!btn) return; const orig=btn.textContent; btn.textContent=msg; setTimeout(()=>{ btn.textContent=orig; },2200); };
   const fallback=()=>{
@@ -1053,7 +1068,7 @@ async function teacherClassReadyScreen(codeOrCls){
     return;
   }
   rememberMyClass(cls);
-  const studentLink=linkFor('class',cls.code), resultsLink=linkFor('results',cls.code);
+  const studentLink=studentLinkFor(cls), resultsLink=linkFor('results',cls.code);
   go(`
     <div class="card center">
       <h2 class="neon">${escapeHtml(cls.name||'כיתה')}</h2>
@@ -1829,11 +1844,16 @@ window.addEventListener('error', ()=>{
 /* ---------- boot ---------- */
 (function boot(){
   const params=new URLSearchParams(location.search);
-  const resultsCode=params.get('results'), teacherFlag=params.get('teacher'), classCode=params.get('class');
+  const resultsCode=params.get('results'), teacherFlag=params.get('teacher'), classCode=params.get('class'), classNameParam=params.get('cn');
   if(resultsCode) return classResultsScreen(resultsCode);
   if(teacherFlag) return teacherHubScreen();
-  if(classCode){                                   // silent auto-join — no UI, kid never sees this happen
-    joinClass(classCode).then(cls=>{ if(cls) syncStudentProgress(); }).catch(()=>{});
+  if(classCode){
+    // Show the class name on the very first paint (from the link's ?cn=), so the invitation
+    // visibly ties back to the class the teacher named — no need to wait on the join fetch.
+    if(classNameParam){ S.classCode=classCode; S.className=classNameParam; save(); }
+    joinClass(classCode).then(cls=>{
+      if(cls){ syncStudentProgress(); refreshClassBanner(); }
+    }).catch(()=>{});
   }
   startScreen();
 })();
