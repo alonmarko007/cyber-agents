@@ -106,8 +106,10 @@
   .subtitle{color:var(--muted);margin-top:8px;font-weight:600}
   .agent-emoji{width:88px;height:88px;border-radius:22px;filter:drop-shadow(0 0 18px rgba(0,229,255,.5));animation:float 3s ease-in-out infinite}
   @keyframes float{50%{transform:translateY(-10px)}}
-  input#nameInput{width:100%;margin-top:14px;padding:14px 16px;border-radius:14px;
-    background:#0a1128;border:1px solid var(--line);color:var(--ink);font-size:17px;text-align:center;font-weight:700}
+  .name-label{display:block;margin-top:16px;font-size:15px;font-weight:800;color:var(--cyan)}
+  input#nameInput{width:100%;margin-top:8px;padding:14px 16px;border-radius:14px;
+    background:#0a1128;border:2px solid var(--cyan);color:var(--ink);font-size:17px;text-align:center;font-weight:700;
+    box-shadow:0 0 14px -4px var(--cyan)}
   input#nameInput:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.25)}
   .btn{display:inline-block;padding:15px 26px;border-radius:16px;font-weight:900;font-size:18px;
        background:linear-gradient(180deg,var(--cyan),#00a7c4);color:#04121a;
@@ -657,13 +659,15 @@ function startScreen(){
         <span class="tag">${icon('shield')} מידע אישי</span><span class="tag">${icon('chat')} בריונות</span>
         <span class="tag">${icon('phishing')} קישורים חשודים</span><span class="tag">${icon('network')} רשתות חברתיות</span>
       </div>
-      <input id="nameInput" maxlength="16" placeholder="איך קוראים לך, סוכן/ת?" value="${escapeHtml(S.name)}" />
+      <label for="nameInput" class="name-label">✍️ קודם כל, איך קוראים לך?</label>
+      <input id="nameInput" maxlength="16" placeholder="הקלד/י את השם שלך כאן" value="${S.name==='סוכן/ת'?'':escapeHtml(S.name)}" />
       <button class="btn big" id="startBtn">${S.done.length? 'המשך משימה ▶':'התחל משימה ▶'}</button>
       ${S.done.length? `<button class="btn ghost big" id="resetBtn" style="margin-top:10px">התחל מחדש 🔄</button>`:''}
       <div class="hint">🔐 השם נשמר רק במכשיר שלך ולא נשלח לאף אחד.</div>
       <div class="credit">נוצר ע"י אלון ואורי מרקוביץ</div>
     </div>
   `);
+  const ni=$('#nameInput'); ni.focus(); ni.select();
   $('#startBtn').onclick=()=>{
     const v=$('#nameInput').value.trim();
     S.name = v || 'סוכן/ת'; save(); sfx.click(); mapScreen();
