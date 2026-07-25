@@ -1158,7 +1158,11 @@ async function classResultsScreen(code){
   let data;
   try{ data=await loadClassResults(code); }catch(e){ data=null; }
   if(!data){
-    go(`<div class="card center"><p class="subtitle">קוד לא נמצא או בעיית רשת. נסו שוב.</p></div>`);
+    go(`<div class="card center">
+          <p class="subtitle">קוד לא נמצא או בעיית רשת. נסו שוב.</p>
+          <button class="btn ghost big" id="teacherBackBtn" style="margin-top:14px">🔙 חזרה למסך המורה</button>
+        </div>`);
+    $('#teacherBackBtn').onclick=()=>{ sfx.click(); teacherClassReadyScreen(code); };
     return;
   }
   const {cls, n, avgScore, completedCount, advancedCount, topicStats}=data;
@@ -1197,10 +1201,12 @@ async function classResultsScreen(code){
       ${ranked.map(bar).join('')}
       ${noDataRow}`}
       <button class="btn big" id="refreshBtn" style="margin-top:18px">🔄 רענן</button>
+      <button class="btn ghost big" id="teacherBackBtn" style="margin-top:10px">🔙 חזרה למסך המורה</button>
       <div class="credit">סוכני הסייבר — משחק בטיחות ברשת</div>
     </div>
   `);
   $('#refreshBtn').onclick=()=>{ sfx.click(); classResultsScreen(code); };
+  $('#teacherBackBtn').onclick=()=>{ sfx.click(); teacherClassReadyScreen(cls); };
 }
 
 /* ----- Map ----- */
