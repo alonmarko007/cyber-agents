@@ -131,7 +131,6 @@
   .btn.danger:active{box-shadow:0 2px 0 #060c22}
   .myclass-del{flex-shrink:0;background:none;color:var(--muted);font-size:18px;padding:6px 10px;
       min-height:44px;min-width:44px;border-radius:10px}
-  .myclass-del:hover{color:var(--bad)}
   .recap-title{margin-top:18px;font-weight:900;font-size:14px;color:var(--yellow)}
   .recap-list{list-style:none;margin:10px 0 0;padding:0;text-align:start;display:flex;flex-direction:column;gap:8px}
   .recap-list li{background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:9px 12px;
@@ -158,7 +157,6 @@
   .myclass-row{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;
       background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:10px 12px;transition:border-color .12s}
   .myclass-row:active{transform:scale(.98)}
-  .myclass-row:hover{border-color:var(--cyan)}
   .myclass-info{min-width:0;text-align:start}
   .myclass-name{font-weight:800;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .myclass-code{font-size:11px;color:var(--muted);direction:ltr;text-align:start}
@@ -219,7 +217,6 @@
   .options{display:flex;flex-direction:column;gap:12px}
   .opt{width:100%;text-align:start;padding:16px 18px;border-radius:16px;font-size:17px;font-weight:700;
     background:#0e1738;border:2px solid var(--line);transition:transform .06s,border-color .1s,background .1s}
-  .opt:hover{border-color:var(--c)}
   .opt:active{transform:scale(.99)}
   .opt.correct{border-color:var(--good);background:rgba(0,230,118,.14);box-shadow:0 0 20px -6px var(--good)}
   .opt.wrong{border-color:var(--bad);background:rgba(255,77,109,.14);animation:shake .35s}
@@ -285,6 +282,14 @@
 
   .fade{animation:fade .35s}
   @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* hover effects only for devices with a real pointer — touchscreens fire a synthetic :hover on tap
+     that then sticks until the next tap elsewhere, which looked like an answer was pre-marked/selected */
+  @media (hover: hover) and (pointer: fine){
+    .opt:hover{border-color:var(--c)}
+    .myclass-row:hover{border-color:var(--cyan)}
+    .myclass-del:hover{color:var(--bad)}
+  }
 
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
@@ -717,7 +722,7 @@ async function syncStudentProgress(){
       body:JSON.stringify({
         class_id:S.classId, device_id:S.deviceId, name:S.name||'סוכן/ת',
         score:S.score, stations_done:S.done.length, total_stations:STATIONS.length,
-        weak_topics:S.weakTopics||[], done_stations:S.done||[]
+        weak_topics:S.weakTopics||[], done_stations:S.done||[], advanced_done:!!S.advancedDone
       })
     });
   }catch(e){ /* offline / unreachable — solo play is unaffected either way */ }
@@ -726,17 +731,18 @@ async function syncStudentProgress(){
 async function loadClassResults(code){
   const cls=await findClassByCode(code);
   if(!cls) return null;
-  const students=await sbFetch(`students?class_id=eq.${cls.id}&select=score,stations_done,total_stations,weak_topics,done_stations`);
+  const students=await sbFetch(`students?class_id=eq.${cls.id}&select=score,stations_done,total_stations,weak_topics,done_stations,advanced_done`);
   const n=students.length;
   const avgScore=n? Math.round(students.reduce((s,x)=>s+x.score,0)/n) : 0;
   const completedCount=students.filter(x=>x.stations_done>=x.total_stations).length;
+  const advancedCount=students.filter(x=>x.advanced_done).length;
   const topicStats=STATIONS.map(st=>{
     const completedIt=students.filter(x=>Array.isArray(x.done_stations)&&x.done_stations.includes(st.id));
     const struggled=completedIt.filter(x=>Array.isArray(x.weak_topics)&&x.weak_topics.includes(st.id)).length;
     return { id:st.id, title:st.title, icon:st.icon, color:st.color,
       attempted:completedIt.length, struggled, pct: completedIt.length? Math.round(100*(completedIt.length-struggled)/completedIt.length) : null };
   });
-  return { cls, n, avgScore, completedCount, topicStats };
+  return { cls, n, avgScore, completedCount, advancedCount, topicStats };
 }
 
 /* ---------- custom icon set (replaces emoji for stage icons + popup feedback icons) ----------
@@ -1074,7 +1080,7 @@ async function classResultsScreen(code){
     go(`<div class="card center"><p class="subtitle">קוד לא נמצא או בעיית רשת. נסו שוב.</p></div>`);
     return;
   }
-  const {cls, n, avgScore, completedCount, topicStats}=data;
+  const {cls, n, avgScore, completedCount, advancedCount, topicStats}=data;
   const ranked=topicStats.filter(t=>t.pct!=null).sort((a,b)=>b.pct-a.pct);
   const noData=topicStats.filter(t=>t.pct==null);
   const strongest=ranked.slice(0,1), weakest=ranked.length>1?ranked.slice(-1):[];
@@ -1098,6 +1104,9 @@ async function classResultsScreen(code){
         <div class="stat"><b>${completedCount}</b><span>סיימו הכול</span></div>
         <div class="stat"><b>${avgScore}</b><span>ניקוד ממוצע</span></div>
       </div>
+      ${n>0?`<div class="stat-row" style="margin-top:10px">
+        <div class="stat" style="min-width:100%"><b style="color:var(--purple)">${advancedCount} 🌟</b><span>עברו את האתגר המתקדם</span></div>
+      </div>`:''}
       ${n===0? `<p class="subtitle" style="margin-top:16px">עוד אף אחד לא הצטרף לכיתה הזו.</p>` : `
       ${strongest.length?`<div class="recap-title" style="margin-top:20px">💪 הכי חזק</div>`:''}
       ${strongest.map(bar).join('')}
@@ -1244,11 +1253,22 @@ function advancedFinaleScreen(){
         <h2 style="color:var(--purple);margin-top:8px" class="neon">האתגר המתקדם הושלם!</h2>
         <p class="subtitle">כבר עברת ${roundsPhrase(ADVANCED_ROUND_LIMIT)} של האתגר המתקדם, ${escapeHtml(S.name)} — זו הרמה הגבוהה ביותר במשחק הזה. את/ה יודע/ת לזהות הונאות, לשמור על פרטיות ולחשוב לפני שלוחצים. תמשיכ/י ליישם את זה גם בחיים האמיתיים — זה מה שבאמת חשוב. 🏆💙</p>
         <div class="stat-row"><div class="stat"><b>${S.score}</b><span>נקודות סה"כ</span></div></div>
-        <button class="btn adv-btn big" id="shareBtn">📤 שתף/י עם חברים</button>
+        <button class="btn adv-btn big" id="downloadAdvBtn">⬇️ הורד/י תעודת אתגר מתקדם</button>
+        <button class="btn adv-btn big" id="shareBtn" style="margin-top:10px">📤 שתף/י עם חברים</button>
         <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
       </div>`);
+  $('#downloadAdvBtn').onclick=()=>{ sfx.click(); downloadAdvancedCertificate(); };
   $('#shareBtn').onclick=()=>{ sfx.click(); shareGame($('#shareBtn')); };
   $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
+}
+function downloadAdvancedCertificate(){
+  downloadCertificateImage({
+    theme:'purple', sealEmoji:'🏆', title:'תעודת אתגר מתקדם', name:S.name,
+    roleText:'מומחה/ית סייבר — רמה מתקדמת',
+    chips: STATIONS.map(s=>({text:s.title.replace('עולם ',''), color:cssColor(s.color)})),
+    stats:[{value:S.score,label:'נקודות סה"כ'},{value:roundsPhrase(ADVANCED_ROUND_LIMIT),label:'סבבים הושלמו'}],
+    dateStr:new Date().toLocaleDateString('he-IL')
+  }, `תעודת-אתגר-מתקדם-${S.name}.png`);
 }
 
 function renderChallenge(){
@@ -1524,11 +1544,13 @@ function stationComplete(st){
           ${firstTime?`<div style="font-size:20px;font-weight:800;margin-top:6px">מומחה/ית סייבר 🌟</div>`:''}
           <p class="subtitle">${praise}</p>
           <div class="stat-row"><div class="stat"><b>+${earned}</b><span>נק' בסבב</span></div><div class="stat"><b>${S.score}</b><span>סה"כ</span></div></div>
+          ${maxed?'<button class="btn adv-btn big" id="downloadAdvBtn">⬇️ הורד/י תעודת אתגר מתקדם</button>':''}
           ${maxed?'':'<p class="subtitle" style="margin-top:10px">מכיר/ה עוד מישהו שכדאי לו/ה ללמוד להגן על עצמו ברשת? שתפ/י את המשחק 💙</p>'}
-          <button class="btn adv-btn big" id="shareBtn">📤 שתף/י עם חברים</button>
+          <button class="btn adv-btn big" id="shareBtn" style="margin-top:10px">📤 שתף/י עם חברים</button>
           ${maxed?'':'<button class="btn big" id="advAgainBtn" style="margin-top:10px">🌟 סבב אתגר נוסף</button>'}
           <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
         </div>`);
+    const dab=$('#downloadAdvBtn'); if(dab) dab.onclick=()=>{ sfx.click(); downloadAdvancedCertificate(); };
     $('#shareBtn').onclick=()=>{ sfx.click(); shareGame($('#shareBtn')); };
     if(!maxed) $('#advAgainBtn').onclick=()=>{ sfx.click(); startAdvanced(); };
     $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
@@ -1593,6 +1615,104 @@ function startReviewRound(){
 }
 
 /* ----- Certificate ----- */
+/* ---------- certificate image (canvas-rendered PNG, downloads straight to the device) ---------- */
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function drawChipsRow(ctx, chips, centerX, y, maxWidth){
+  if(!chips.length) return y;
+  ctx.font='700 22px Arial, sans-serif';
+  const pad=20, gap=12, chipH=44;
+  const widths=chips.map(c=>ctx.measureText(c.text).width+pad*2);
+  const rows=[]; let row=[], rowW=0;
+  widths.forEach((w,i)=>{
+    if(rowW+w+gap>maxWidth && row.length){ rows.push(row); row=[]; rowW=0; }
+    row.push({...chips[i], w}); rowW+=w+gap;
+  });
+  if(row.length) rows.push(row);
+  let cy=y;
+  rows.forEach(r=>{
+    const totalW=r.reduce((s,c)=>s+c.w,0)+gap*(r.length-1);
+    let x=centerX-totalW/2;
+    r.forEach(c=>{
+      ctx.fillStyle=c.color; roundRectPath(ctx,x,cy,c.w,chipH,chipH/2); ctx.fill();
+      ctx.fillStyle='#0a1128'; ctx.textAlign='center';
+      ctx.fillText(c.text, x+c.w/2, cy+chipH/2+8);
+      x+=c.w+gap;
+    });
+    cy+=chipH+12;
+  });
+  return cy;
+}
+function drawStatsRow(ctx, stats, centerX, y){
+  const boxW=210, boxH=110, gap=20, maxTextW=boxW-24;
+  const totalW=stats.length*boxW+(stats.length-1)*gap;
+  let x=centerX-totalW/2;
+  stats.forEach(s=>{
+    ctx.fillStyle='#0a1128'; roundRectPath(ctx,x,y,boxW,boxH,16); ctx.fill();
+    ctx.strokeStyle='rgba(120,150,220,.35)'; ctx.lineWidth=2; roundRectPath(ctx,x,y,boxW,boxH,16); ctx.stroke();
+    ctx.textAlign='center';
+    const text=String(s.value);
+    let fontSize=40;
+    ctx.font=`900 ${fontSize}px Arial, sans-serif`;
+    while(fontSize>18 && ctx.measureText(text).width>maxTextW){ fontSize-=2; ctx.font=`900 ${fontSize}px Arial, sans-serif`; }
+    ctx.fillStyle='#00e5ff';
+    ctx.fillText(text, x+boxW/2, y+56);
+    ctx.fillStyle='#8fa0c8'; ctx.font='600 20px Arial, sans-serif';
+    ctx.fillText(s.label, x+boxW/2, y+88);
+    x+=boxW+gap;
+  });
+  return y+boxH;
+}
+function renderCertificateCanvas(opts){
+  const W=900,H=1260;
+  const cvs=document.createElement('canvas'); cvs.width=W; cvs.height=H;
+  const ctx=cvs.getContext('2d');
+  ctx.direction='rtl'; ctx.textAlign='center';
+  const theme=opts.theme==='purple' ? {c:'#b388ff'} : {c:'#ffd54f'};
+  const grad=ctx.createRadialGradient(W/2,220,60,W/2,220,760);
+  grad.addColorStop(0, opts.theme==='purple' ? 'rgba(179,136,255,.20)' : 'rgba(255,213,79,.20)');
+  grad.addColorStop(1, '#0d1430');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle=theme.c; ctx.lineWidth=10; roundRectPath(ctx,25,25,W-50,H-50,30); ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=2; roundRectPath(ctx,42,42,W-84,H-84,22); ctx.stroke();
+  ctx.font='130px "Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  ctx.fillText(opts.sealEmoji, W/2, 210);
+  ctx.fillStyle=theme.c; ctx.font='900 30px Arial, sans-serif';
+  ctx.fillText(opts.title, W/2, 290);
+  ctx.fillStyle='#8fa0c8'; ctx.font='600 24px Arial, sans-serif';
+  ctx.fillText('מוענקת בזאת ל-', W/2, 345);
+  ctx.fillStyle=theme.c; ctx.font='900 62px Arial, sans-serif';
+  ctx.fillText(opts.name, W/2, 425);
+  ctx.fillStyle='#eaf2ff'; ctx.font='800 28px Arial, sans-serif';
+  ctx.fillText(opts.roleText, W/2, 475);
+  let cy=drawChipsRow(ctx, opts.chips, W/2, 530, W-160);
+  cy=drawStatsRow(ctx, opts.stats, W/2, cy+30);
+  ctx.fillStyle='#8fa0c8'; ctx.font='500 22px Arial, sans-serif';
+  ctx.fillText(opts.dateStr, W/2, cy+60);
+  ctx.globalAlpha=.7; ctx.font='500 20px Arial, sans-serif';
+  ctx.fillText('סוכני הסייבר — משחק בטיחות ברשת', W/2, H-60);
+  ctx.globalAlpha=1;
+  return cvs;
+}
+function downloadCertificateImage(opts, filename){
+  const cvs=renderCertificateCanvas(opts);
+  cvs.toBlob(blob=>{
+    if(!blob) return;
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  }, 'image/png');
+}
+
 function certScreen(){
   cur=null; updateHUD(); sfx.win(); haptic.badge(); burst('var(--yellow)'); setTimeout(()=>burst('var(--cyan)'),300);
   const badges=STATIONS.map(s=>`<span style="color:${s.color}">${icon(s.icon)}</span>`).join('');
@@ -1610,13 +1730,24 @@ function certScreen(){
         </div>
         <p class="subtitle" style="margin-top:8px">עכשיו את/ה יודע/ת לשמור על עצמך ועל חברים ברשת. שתף/י את מה שלמדת! 💙</p>
         <div class="print-date">${new Date().toLocaleDateString('he-IL')}</div>
-        <button class="btn adv-btn big no-print" id="downloadBtn" style="margin-top:14px">🖨️ הדפס/י או שמור/י כ-PDF</button>
+        <button class="btn adv-btn big no-print" id="downloadBtn" style="margin-top:14px">⬇️ הורד/י תעודה כתמונה</button>
+        <button class="link-btn no-print" id="printBtn">🖨️ הדפסה</button>
         <button class="btn adv-btn big no-print" id="shareBtn" style="margin-top:10px">📤 שתף/י עם חברים</button>
         <button class="btn big no-print" id="advBtn2" style="margin-top:10px">${advancedMaxed()?'🏆 האתגר המתקדם הושלם':'🌟 מוכן/ה לאתגר מתקדם? שאלות קשות יותר'}</button>
         <button class="btn ghost big no-print" id="againBtn" style="margin-top:10px">שחק/י שוב מההתחלה 🔄</button>
         <div class="credit">נוצר ע"י אלון ואורי מרקוביץ</div>
       </div>`);
-  $('#downloadBtn').onclick=()=>{ sfx.click(); window.print(); };
+  $('#downloadBtn').onclick=()=>{
+    sfx.click();
+    downloadCertificateImage({
+      theme:'gold', sealEmoji:'🏆', title:'תעודת הסמכה', name:S.name,
+      roleText:'סוכן/ת בטיחות סייבר מוסמך/ת',
+      chips: STATIONS.map(s=>({text:s.title.replace('עולם ',''), color:cssColor(s.color)})),
+      stats:[{value:S.score,label:'נקודות'},{value:`${STATIONS.length}/${STATIONS.length}`,label:'תגים'},{value:TOTAL,label:'משימות'}],
+      dateStr:new Date().toLocaleDateString('he-IL')
+    }, `תעודת-סוכן-סייבר-${S.name}.png`);
+  };
+  $('#printBtn').onclick=()=>{ sfx.click(); window.print(); };
   $('#shareBtn').onclick=()=>{ sfx.click(); shareGame($('#shareBtn')); };
   $('#advBtn2').onclick=()=>{ sfx.click(); openAdvanced(); };
   $('#againBtn').onclick=()=>{ sfx.click(); if(confirm('להתחיל מחדש ולשחק שוב?')){ S.score=0;S.done=[];S.partial={};S.weakTopics=[];S.reviewDone=false;delete S.advRound;streak=0;save(); startScreen(); } };
