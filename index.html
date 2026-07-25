@@ -72,6 +72,7 @@
   h1,h2,h3{margin:0}
   .neon{text-shadow:0 0 8px currentColor,0 0 22px currentColor}
   button{font-family:inherit;cursor:pointer;border:none;color:inherit}
+  .icon{width:1em;height:1em;flex-shrink:0}
 
   /* ---------- HUD ---------- */
   #hud{display:none;flex-shrink:0;gap:10px;align-items:center;justify-content:space-between;
@@ -117,7 +118,7 @@
   .btn.ghost:active{box-shadow:0 2px 0 #060c22}
   .hint{color:var(--muted);font-size:12px;margin-top:12px}
   .credit{color:var(--muted);font-size:11px;margin-top:14px;opacity:.7}
-  .tag{display:inline-block;font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;
+  .tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;
        background:#0a1128;border:1px solid var(--line);color:var(--muted);margin:3px}
   .btn.adv-btn{background:linear-gradient(180deg,var(--purple),#7a4fd9);color:#0c0620;
        box-shadow:0 8px 0 #4a2e96,0 10px 24px rgba(179,136,255,.35)}
@@ -138,13 +139,14 @@
   .station.playable:active{transform:scale(.98)}
   .station.locked{opacity:.5;filter:grayscale(.4)}
   .station.done{}
-  .st-emoji{font-size:38px;width:60px;height:60px;flex:0 0 60px;display:grid;place-items:center;
-    background:#0a1128;border-radius:16px;border:1px solid var(--line);position:relative;z-index:1}
+  .st-emoji{font-size:30px;width:60px;height:60px;flex:0 0 60px;display:grid;place-items:center;
+    background:#0a1128;border-radius:16px;border:1px solid var(--line);position:relative;z-index:1;
+    color:var(--c);filter:drop-shadow(0 0 5px var(--c))}
   .st-body{flex:1;min-width:0}
   .st-body h3{font-size:17px;color:var(--c)}
   .st-body p{margin:3px 0 0;color:var(--muted);font-size:13px}
-  .st-badge{font-size:30px;filter:drop-shadow(0 0 8px var(--c))}
-  .st-lock{font-size:22px;color:var(--muted)}
+  .st-badge{font-size:26px;color:var(--c);filter:drop-shadow(0 0 8px var(--c))}
+  .st-lock{font-size:20px;color:var(--muted)}
   .st-play{font-weight:900;color:var(--c);font-size:14px;white-space:nowrap}
   /* connecting trail between stations: mirrors .station's box model (border-inline-start + padding)
      so the line lands exactly under the icon column, regardless of card height/text wrap */
@@ -197,7 +199,10 @@
     box-shadow:0 -10px 44px -8px rgba(0,0,0,.65)}
   .fb-modal.good{border-color:var(--good);box-shadow:0 0 44px -10px var(--good)}
   .fb-modal.bad{border-color:var(--yellow);box-shadow:0 0 44px -10px var(--yellow)}
-  .fb-emoji{font-size:52px;line-height:1;margin-bottom:4px}
+  .fb-emoji{font-size:44px;line-height:1;margin-bottom:4px;display:flex;justify-content:center;
+            filter:drop-shadow(0 0 8px currentColor)}
+  .fb-modal.good .fb-emoji{color:var(--good)}
+  .fb-modal.bad .fb-emoji{color:var(--yellow)}
   .fb-modal .fb-title{font-weight:900;font-size:20px;margin-bottom:8px}
   .fb-modal.good .fb-title{color:var(--good)}
   .fb-modal.bad .fb-title{color:var(--yellow)}
@@ -227,14 +232,16 @@
   .binL h4{color:var(--good)} .binR h4{color:var(--bad)}
 
   /* ---------- Station complete / certificate ---------- */
-  .badge-pop{font-size:96px;animation:pop .5s cubic-bezier(.2,1.4,.4,1);filter:drop-shadow(0 0 22px var(--c))}
+  .badge-pop{font-size:84px;display:flex;justify-content:center;color:var(--c);
+             animation:pop .5s cubic-bezier(.2,1.4,.4,1);filter:drop-shadow(0 0 22px var(--c))}
   @keyframes pop{from{transform:scale(0) rotate(-25deg)}to{transform:scale(1)}}
   .cert{border:3px solid var(--yellow);border-radius:24px;padding:26px 20px;text-align:center;
         background:radial-gradient(circle at 50% 0%,rgba(255,213,79,.14),transparent 70%),var(--panel-solid);
         box-shadow:0 0 40px -8px var(--yellow);flex-shrink:0}
-  .cert .seal{font-size:64px;filter:drop-shadow(0 0 16px var(--yellow))}
+  .cert .seal{font-size:56px;color:var(--yellow);display:flex;justify-content:center;filter:drop-shadow(0 0 16px var(--yellow))}
   .cert .name{font-size:30px;font-weight:900;color:var(--yellow);margin:8px 0}
-  .cert .badges{font-size:34px;letter-spacing:6px;margin:14px 0}
+  .cert .badges{display:flex;justify-content:center;flex-wrap:wrap;gap:14px;font-size:28px;margin:14px 0}
+  .cert .badges .icon{filter:drop-shadow(0 0 6px currentColor)}
   .stat-row{display:flex;gap:12px;justify-content:center;margin:14px 0;flex-wrap:wrap}
   .stat{background:#0a1128;border:1px solid var(--line);border-radius:14px;padding:10px 18px;min-width:90px}
   .stat b{display:block;font-size:26px;color:var(--cyan)}
@@ -275,7 +282,7 @@
 
 const STATIONS = [
   {
-    id:'pass', title:'עולם הסיסמאות', emoji:'🔒', color:'var(--cyan)', badge:'🔑',
+    id:'pass', title:'עולם הסיסמאות', icon:'lock', color:'var(--cyan)',
     badgeName:'מומחה/ית סיסמאות',
     challenges:[
       { type:'quiz',
@@ -304,7 +311,7 @@ const STATIONS = [
     ]
   },
   {
-    id:'strangers', title:'עולם הזרים', emoji:'🕵️', color:'var(--purple)', badge:'🛰️',
+    id:'strangers', title:'עולם הזרים', icon:'stranger', color:'var(--purple)',
     badgeName:'שומר/ת מפני זרים',
     challenges:[
       { type:'quiz',
@@ -330,7 +337,7 @@ const STATIONS = [
     ]
   },
   {
-    id:'info', title:'עולם המידע האישי', emoji:'🛡️', color:'var(--green)', badge:'🧾',
+    id:'info', title:'עולם המידע האישי', icon:'shield', color:'var(--green)',
     badgeName:'שומר/ת הפרטיות',
     challenges:[
       { type:'sort',
@@ -360,7 +367,7 @@ const STATIONS = [
     ]
   },
   {
-    id:'bully', title:'עולם הבריונות', emoji:'💬', color:'var(--pink)', badge:'🤝',
+    id:'bully', title:'עולם הבריונות', icon:'chat', color:'var(--pink)',
     badgeName:'חבר/ה אמיץ/ה',
     challenges:[
       { type:'quiz',
@@ -391,7 +398,7 @@ const STATIONS = [
     ]
   },
   {
-    id:'links', title:'עולם ההודעות והקישורים המפוקפקים', emoji:'🎣', color:'var(--yellow)', badge:'🧭',
+    id:'links', title:'עולם ההודעות והקישורים המפוקפקים', icon:'phishing', color:'var(--yellow)',
     badgeName:'צייד/ת התרמיות',
     challenges:[
       { type:'quiz',
@@ -427,7 +434,7 @@ const STATIONS = [
     ]
   },
   {
-    id:'social', title:'עולם הרשתות החברתיות', emoji:'📱', color:'var(--orange)', badge:'🌐',
+    id:'social', title:'עולם הרשתות החברתיות', icon:'network', color:'var(--orange)',
     badgeName:'מגן/ת הרשתות',
     challenges:[
       { type:'quiz',
@@ -515,6 +522,29 @@ const RANKS = ['מתלמד/ת','סוכן/ת זוטר/ה','סוכן/ת','סוכן
 const TOTAL = STATIONS.reduce((n,s)=>n+s.challenges.length,0);
 const LIVES = 3;
 const SAVE_KEY = 'cyberAgentsSave';
+
+/* ---------- custom icon set (replaces emoji for stage icons + popup feedback icons) ----------
+   line-art style, currentColor-driven so each inherits the surrounding --c/color context. */
+const ICON_PATHS = {
+  lock:      '<path d="M8 11V7.5a4 4 0 0 1 8 0V11"/><rect x="5" y="11" width="14" height="9.5" rx="2.2"/><circle cx="12" cy="15" r="1.35" fill="currentColor" stroke="none"/><path d="M12 16.3v1.7"/>',
+  stranger:  '<path d="M12 3.2c-3.1 0-5.4 2.4-5.4 5.7 0 1.8.7 3.2 1.7 4.3-3 1.4-4.8 4.1-4.8 7.6h17c0-3.5-1.8-6.2-4.8-7.6 1-1.1 1.7-2.5 1.7-4.3 0-3.3-2.3-5.7-5.4-5.7z"/><circle cx="12" cy="9.7" r="2.6" fill="#0a1128" stroke="none"/>',
+  shield:    '<path d="M12 3.2 5 6v5.5c0 5 3 8 7 9.3 4-1.3 7-4.3 7-9.3V6l-7-2.8z"/><circle cx="12" cy="10.2" r="1.9"/><path d="M8.7 16c.6-1.7 2-2.6 3.3-2.6s2.7.9 3.3 2.6"/>',
+  chat:      '<path d="M4 5.8h16a1.7 1.7 0 0 1 1.7 1.7v7.6a1.7 1.7 0 0 1-1.7 1.7h-9L6.3 20v-3.2H4a1.7 1.7 0 0 1-1.7-1.7V7.5A1.7 1.7 0 0 1 4 5.8z"/><path d="M12 14s-3.3-1.9-3.3-4.2a1.9 1.9 0 0 1 3.3-1.3 1.9 1.9 0 0 1 3.3 1.3c0 2.3-3.3 4.2-3.3 4.2z"/>',
+  phishing:  '<path d="M3.5 6.5A2 2 0 0 1 5.5 4.5h8A2 2 0 0 1 15.5 6.5V13a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2V6.5z"/><path d="m3.5 6.5 6 4.3 6-4.3"/><path d="M15.5 13c2.3-.3 4-1.2 4.6-3.3.3-1.1-.2-2.2-1.2-2.5-1-.3-1.9.4-1.9 1.4 0 .8.6 1.3 1.3 1.5"/>',
+  network:   '<circle cx="6" cy="7" r="2.3"/><circle cx="18" cy="7" r="2.3"/><circle cx="12" cy="18" r="2.3"/><path d="M7.8 8.4 10.5 16M16.2 8.4 13.5 16M8.3 7h7.4"/>',
+  check:     '<circle cx="12" cy="12" r="9"/><path d="M7.8 12.3 10.6 15 16.3 8.8"/>',
+  lightbulb: '<path d="M12 3.2a5.8 5.8 0 0 0-3.1 10.7c.5.4.8 1 .8 1.6v.7h4.6v-.7c0-.6.3-1.2.8-1.6A5.8 5.8 0 0 0 12 3.2z"/><path d="M9.7 18.5h4.6M10.4 21h3.2"/>',
+  crackedheart:'<path d="M12 20s-7-4.4-7-9.8A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 7 3.2c0 5.4-7 9.8-7 9.8z"/><path d="M12.8 7.5 10.5 11l2 1.6-1.7 3.4"/>',
+  trophy:    '<path d="M7 4h10v4.2c0 3-2.2 5.3-5 5.6-2.8-.3-5-2.6-5-5.6V4z"/><path d="M7 5H4.5a2 2 0 0 0 0 4H7M17 5h2.5a2 2 0 0 1 0 4H17"/><path d="M12 13.8V17M9 20.5h6M9.5 20.5c0-1.8.9-2.8 2.5-2.8s2.5 1 2.5 2.8"/>'
+};
+const ICON_FILL_PATHS = {
+  star: '<path d="M12 3.5l2.4 5.3 5.8.6-4.4 3.9 1.3 5.7L12 15.9 6.9 19l1.3-5.7-4.4-3.9 5.8-.6L12 3.5z"/>'
+};
+function icon(key){
+  if(ICON_FILL_PATHS[key]) return `<svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ICON_FILL_PATHS[key]}</svg>`;
+  const d=ICON_PATHS[key]; if(!d) return '';
+  return `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+}
 
 let S = { name:'', score:0, done:[], muted:false, partial:{} };
 let cur = null; // {si, ci, lives, firstTry}
@@ -623,9 +653,9 @@ function startScreen(){
       <h1 class="logo">סוֹכְנֵי הַסַּיְבֶּר</h1>
       <div class="subtitle">משחק הבטיחות ברשת</div>
       <div style="margin-top:10px">
-        <span class="tag">🔒 סיסמאות</span><span class="tag">🕵️ זרים</span>
-        <span class="tag">🛡️ מידע אישי</span><span class="tag">💬 בריונות</span>
-        <span class="tag">🎣 קישורים חשודים</span><span class="tag">📱 רשתות חברתיות</span>
+        <span class="tag">${icon('lock')} סיסמאות</span><span class="tag">${icon('stranger')} זרים</span>
+        <span class="tag">${icon('shield')} מידע אישי</span><span class="tag">${icon('chat')} בריונות</span>
+        <span class="tag">${icon('phishing')} קישורים חשודים</span><span class="tag">${icon('network')} רשתות חברתיות</span>
       </div>
       <input id="nameInput" maxlength="16" placeholder="איך קוראים לך, סוכן/ת?" value="${escapeHtml(S.name)}" />
       <button class="btn big" id="startBtn">${S.done.length? 'המשך משימה ▶':'התחל משימה ▶'}</button>
@@ -654,16 +684,16 @@ function mapScreen(){
     const n=st.challenges.length;
     const partial = (!done && S.partial[st.id]) ? S.partial[st.id] : 0;
     let right, sub;
-    if(done){ right=`<div class="st-badge">${st.badge}</div>`; sub='✔ הושלם · '+st.badgeName+' · הקש/י לתרגול 🔁'; }
+    if(done){ right=`<div class="st-badge">${icon(st.icon)}</div>`; sub='✔ הושלם · '+st.badgeName+' · הקש/י לתרגול 🔁'; }
     else if(playable){
       right=`<div class="st-play">${partial?('המשך '+partial+'/'+n):'שחק'} ▶</div>`;
       sub = partial ? ('בתהליך · '+partial+'/'+n+' הושלמו') : 'התחנה הבאה שלך';
-    } else { right=`<div class="st-lock">🔒</div>`; sub='ננעל — סיים/י את הקודמת'; }
+    } else { right=`<div class="st-lock">${icon('lock')}</div>`; sub='ננעל — סיים/י את הקודמת'; }
     const clickable = done || playable;
     nodes += `
       <div class="station ${done?'done':''} ${playable?'playable next':''} ${locked?'locked':''} ${clickable?'clickable':''}"
            style="--c:${st.color}" data-i="${i}">
-        <div class="st-emoji">${st.emoji}</div>
+        <div class="st-emoji">${icon(st.icon)}</div>
         <div class="st-body">
           <h3>${st.title}</h3>
           <p>${sub}</p>
@@ -724,7 +754,7 @@ function pickAdvancedRound(){
   return cats.map(c=>shuffle(byCat[c].slice())[0]);
 }
 function buildAdvStation(list){
-  return { id:'advanced', title:'אתגר מתקדם', emoji:'🌟', color:'var(--purple)', badge:'🌟',
+  return { id:'advanced', title:'אתגר מתקדם', icon:'star', color:'var(--purple)',
            badgeName:'מומחה/ית סייבר', challenges:list };
 }
 function startAdvanced(){
@@ -743,8 +773,9 @@ function resumeAdvanced(){
   cur={si:'adv', ci:S.advRound.ci, lives:S.advRound.lives, firstTry:true, practice:false, advanced:true};
   renderChallenge();
 }
-const ADVANCED_ROUND_LIMIT = 2;   // after this many completed rounds, the advanced challenge is finished
+const ADVANCED_ROUND_LIMIT = 1;   // after this many completed rounds, the advanced challenge is finished
 function advancedMaxed(){ return (S.advancedPlays||0) >= ADVANCED_ROUND_LIMIT; }
+function roundsPhrase(n){ return n===1 ? 'סבב אחד' : n+' סבבים'; }
 function openAdvanced(){
   if(S.advRound && S.advRound.ci < S.advRound.ids.length) resumeAdvanced();
   else if(advancedMaxed()) advancedFinaleScreen();
@@ -752,9 +783,9 @@ function openAdvanced(){
 }
 function advancedFinaleScreen(){
   go(`<div class="card center" style="--c:var(--purple)">
-        <div class="badge-pop">🏆</div>
+        <div class="badge-pop">${icon('trophy')}</div>
         <h2 style="color:var(--purple);margin-top:8px" class="neon">האתגר המתקדם הושלם!</h2>
-        <p class="subtitle">כבר עברת ${ADVANCED_ROUND_LIMIT} סבבים של האתגר המתקדם, ${escapeHtml(S.name)} — זו הרמה הגבוהה ביותר במשחק הזה. את/ה יודע/ת לזהות הונאות, לשמור על פרטיות ולחשוב לפני שלוחצים. תמשיכ/י ליישם את זה גם בחיים האמיתיים — זה מה שבאמת חשוב. 🏆💙</p>
+        <p class="subtitle">כבר עברת ${roundsPhrase(ADVANCED_ROUND_LIMIT)} של האתגר המתקדם, ${escapeHtml(S.name)} — זו הרמה הגבוהה ביותר במשחק הזה. את/ה יודע/ת לזהות הונאות, לשמור על פרטיות ולחשוב לפני שלוחצים. תמשיכ/י ליישם את זה גם בחיים האמיתיים — זה מה שבאמת חשוב. 🏆💙</p>
         <div class="stat-row"><div class="stat"><b>${S.score}</b><span>נקודות סה"כ</span></div></div>
         <button class="btn adv-btn big" id="shareBtn">📤 שתף/י עם חברים</button>
         <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
@@ -774,7 +805,7 @@ function renderChallenge(){
     <div class="sticky-head">
       <div class="chal-top">
         <button class="mini-btn" id="toMapBtn">🗺️ מפה</button>
-        <div class="chip" style="--c:${st.color}">${st.emoji} ${st.title}${cur.practice?' · תרגול':''}</div>
+        <div class="chip" style="--c:${st.color}">${icon(st.icon)} ${st.title}${cur.practice?' · תרגול':''}</div>
         <button class="mini-btn" id="resetStageBtn">🔄 אפס שלב</button>
       </div>
       <div class="dots">${dots}</div>
@@ -803,11 +834,13 @@ function renderQuiz(st,ch,head){
   });
 }
 function answerQuiz(pos, st, ch, order){
+  const btns=document.querySelectorAll('#opts .opt');
+  if(btns[0] && btns[0].disabled) return;      // already resolving this question — ignore a stray extra tap
+  btns.forEach(b=>b.disabled=true);            // lock immediately so a rapid double-tap can't mark a second option
   const correctPos = order.indexOf(ch.answer);
   const correct = pos===correctPos;
-  const btns=document.querySelectorAll('#opts .opt');
   if(correct){
-    btns.forEach((b,bi)=>{ b.disabled=true; if(bi===pos)b.classList.add('correct'); else b.classList.add('dim'); });
+    btns.forEach((b,bi)=>{ if(bi===pos)b.classList.add('correct'); else b.classList.add('dim'); });
     sfx.correct();
     awardCorrect(st,ch);
   } else {
@@ -816,7 +849,7 @@ function answerQuiz(pos, st, ch, order){
     showFeedback(false, ch.explain, ()=>{
       b.classList.remove('wrong');
       if(cur.lives<=0){ stationFailed(st); }
-      // else: let them try again on same question (same shuffled order)
+      else btns.forEach(bt=>bt.disabled=false);  // unlock for the retry (same shuffled order)
     });
   }
 }
@@ -930,16 +963,18 @@ function onItemPointerUp(e){
 }
 function onItemPointerCancel(){ cleanupDrag(); dragState=null; }
 function checkSort(st,ch){
+  if($('#checkBtn').disabled) return;         // already resolving this question — ignore a stray extra tap
+  $('#checkBtn').disabled=true;
   const items=cur._sort.items;
   const wrong = items.filter(it=>it.placed!==it.bin).length;
   if(wrong===0){
-    sfx.correct(); $('#checkBtn').disabled=true;
+    sfx.correct();
     awardCorrect(st,ch);
   } else {
     cur.lives--; cur.firstTry=false; sfx.wrong(); updateHUD();
     // No per-item reveal — teach the principle and let them rethink (their arrangement stays).
     const hint = ch.explain + ` <b>(עדיין ${wrong} לא במקום הנכון — חשוב/י איזה צד מתאים לכל פריט.)</b>`;
-    showFeedback(false, hint, ()=>{ if(cur.lives<=0){ stationFailed(st); } });
+    showFeedback(false, hint, ()=>{ if(cur.lives<=0){ stationFailed(st); } else $('#checkBtn').disabled=false; });
   }
 }
 
@@ -956,12 +991,13 @@ function awardCorrect(st,ch){
   showFeedback(true, ch.explain, ()=>nextChallenge(st), pts);
 }
 function showFeedback(good, text, onNext, pts){
+  document.querySelectorAll('.fb-overlay').forEach(el=>el.remove());  // guard against a stray duplicate modal
   const opener = good ? pick(CORRECT_OPENERS,_pl)(S.name) : pick(WRONG_OPENERS,_wl)(S.name);
   const title = good ? (pts>0 ? `${opener} · +${pts} נק'` : opener) : opener;
   const ov=document.createElement('div'); ov.className='fb-overlay';
   ov.innerHTML=`
     <div class="fb-modal ${good?'good':'bad'}">
-      <div class="fb-emoji">${good?'🎉':'💡'}</div>
+      <div class="fb-emoji">${good?icon('check'):icon('lightbulb')}</div>
       <div class="fb-title">${title}</div>
       <div class="fb-text">${text}</div>
       <button class="btn big" id="fbBtn" style="margin-top:16px">${good?'המשך ▶':'נסה/י שוב 🔁'}</button>
@@ -979,10 +1015,10 @@ function stationFailed(st){
   if(wasAdvanced){ delete S.advRound; save(); }
   else if(!cur.practice){ S.partial[st.id]=0; save(); }
   go(`<div class="card center" style="--c:${st.color}">
-        <div style="font-size:70px">💔</div>
+        <div style="font-size:64px;display:flex;justify-content:center;color:var(--bad);filter:drop-shadow(0 0 14px var(--bad))">${icon('crackedheart')}</div>
         <h2 style="color:var(--bad)">נגמרו החיים בתחנה זו</h2>
         <p class="subtitle">זה בסדר גמור, ${escapeHtml(S.name)} — סוכנים לומדים מניסיון! ננסה את התחנה שוב מההתחלה.</p>
-        <div class="chip" style="--c:${st.color};margin-top:12px">${st.emoji} ${st.title}</div>
+        <div class="chip" style="--c:${st.color};margin-top:12px">${icon(st.icon)} ${st.title}</div>
         <button class="btn big" id="retryBtn">נסה/י את התחנה שוב 🔁</button>
         <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
       </div>`);
@@ -997,14 +1033,16 @@ function stationComplete(st){
     delete S.advRound; save();
     cur=null; updateHUD(); sfx.win(); burst('var(--purple)'); setTimeout(()=>burst('var(--yellow)'),300);
     const praise = maxed
-      ? `זהו זה, ${escapeHtml(S.name)}! 🏆 סיימת ${ADVANCED_ROUND_LIMIT} סבבים של האתגר המתקדם — עברת שאלות קשות מכל תחומי הבטיחות, ברמה גבוהה מאוד. זו ההוכחה הכי טובה שאת/ה יודע/ת להגן על עצמך ברשת. תמשיכ/י ליישם את זה גם בחיים האמיתיים — זה מה שבאמת חשוב. 💙`
+      ? (firstTime
+          ? `מדהים, ${escapeHtml(S.name)}! 🏆 עברת בהצלחה שאלות קשות מכל ${st.challenges.length} תחומי הבטיחות — ברמה שלא כל מבוגר עומד בה. זו ההוכחה הכי טובה שאת/ה יודע/ת להגן על עצמך ברשת. תמשיכ/י ליישם את זה גם בחיים האמיתיים — זה מה שבאמת חשוב. 💙`
+          : `זהו זה, ${escapeHtml(S.name)}! 🏆 סיימת ${roundsPhrase(ADVANCED_ROUND_LIMIT)} של האתגר המתקדם — עברת שאלות קשות מכל תחומי הבטיחות, ברמה גבוהה מאוד. זו ההוכחה הכי טובה שאת/ה יודע/ת להגן על עצמך ברשת. תמשיכ/י ליישם את זה גם בחיים האמיתיים — זה מה שבאמת חשוב. 💙`)
       : firstTime
       ? `וואו, ${escapeHtml(S.name)}! 🌟 השקעת מאמץ אמיתי ועברת בהצלחה שאלות מכל ${st.challenges.length} תחומי הבטיחות — ברמה שלא כל מבוגר עומד בה. זו הוכחה שאת/ה באמת יודע/ת להגן על עצמך ברשת.`
       : `שוב הצלחת, ${escapeHtml(S.name)}! 🌟 עוד סבב, עוד הוכחה שהידע שלך על בטיחות ברשת רק מתחזק.`;
     go(`<div class="card center" style="--c:${st.color}">
-          <div class="badge-pop">${maxed?'🏆':'🌟'}</div>
+          <div class="badge-pop">${maxed?icon('trophy'):icon('star')}</div>
           <h2 style="color:var(--purple);margin-top:8px" class="neon">${maxed?'האתגר המתקדם הושלם!':(firstTime?'תג מיוחד הושג!':'סבב נוסף הושלם!')}</h2>
-          ${firstTime&&!maxed?`<div style="font-size:20px;font-weight:800;margin-top:6px">מומחה/ית סייבר 🌟</div>`:''}
+          ${firstTime?`<div style="font-size:20px;font-weight:800;margin-top:6px">מומחה/ית סייבר 🌟</div>`:''}
           <p class="subtitle">${praise}</p>
           <div class="stat-row"><div class="stat"><b>+${earned}</b><span>נק' בסבב</span></div><div class="stat"><b>${S.score}</b><span>סה"כ</span></div></div>
           ${maxed?'':'<p class="subtitle" style="margin-top:10px">מכיר/ה עוד מישהו שכדאי לו/ה ללמוד להגן על עצמו ברשת? שתפ/י את המשחק 💙</p>'}
@@ -1020,7 +1058,7 @@ function stationComplete(st){
   if(cur.practice){                                          // replay finished — celebrate, no score/badge change
     cur=null; updateHUD(); sfx.badge(); burst(st.color);
     go(`<div class="card center" style="--c:${st.color}">
-          <div class="badge-pop">${st.badge}</div>
+          <div class="badge-pop">${icon(st.icon)}</div>
           <h2 style="color:${st.color};margin-top:8px" class="neon">כל הכבוד, ${escapeHtml(S.name)}!</h2>
           <p class="subtitle">השלמת שוב את «${st.title}» — תרגול מצוין 💪</p>
           <button class="btn big" id="contBtn">חזרה למפה 🗺️</button>
@@ -1034,7 +1072,7 @@ function stationComplete(st){
   const allDone=S.done.length===STATIONS.length;
   const recap = st.challenges.map((c,i)=>`<li style="animation-delay:${i*90}ms">✅ ${shortRecap(c.explain)}</li>`).join('');
   go(`<div class="card center" style="--c:${st.color}">
-        <div class="badge-pop">${st.badge}</div>
+        <div class="badge-pop">${icon(st.icon)}</div>
         <h2 style="color:${st.color};margin-top:8px" class="neon">תג הושג!</h2>
         <div style="font-size:20px;font-weight:800;margin-top:6px">${st.badgeName}</div>
         <p class="subtitle">כל הכבוד, ${escapeHtml(S.name)}! סיימת את «${st.title}» 🎉</p>
@@ -1052,9 +1090,9 @@ function stationComplete(st){
 /* ----- Certificate ----- */
 function certScreen(){
   cur=null; updateHUD(); sfx.win(); burst('var(--yellow)'); setTimeout(()=>burst('var(--cyan)'),300);
-  const badges=STATIONS.map(s=>s.badge).join(' ');
+  const badges=STATIONS.map(s=>`<span style="color:${s.color}">${icon(s.icon)}</span>`).join('');
   go(`<div class="cert fade">
-        <div class="seal">🎖️</div>
+        <div class="seal">${icon('trophy')}</div>
         <div class="chip" style="--c:var(--yellow);margin-top:6px">תעודת הסמכה</div>
         <p style="margin:14px 0 2px;color:var(--muted)">מוענקת בזאת ל־</p>
         <div class="name neon">${escapeHtml(S.name)}</div>
