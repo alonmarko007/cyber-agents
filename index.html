@@ -1914,11 +1914,13 @@ window.addEventListener('error', ()=>{
 })();
 
 // Small on-screen build marker (bottom-left, low-opacity) so it's possible to confirm which
-// deploy is actually live on a given device without checking Vercel — fails silently offline
-// or wherever /api isn't available (e.g. a plain static preview).
-fetch('/api/version').then(r=>r.json()).then(v=>{
-  if(v && v.sha) $('#versionTag').textContent = 'v.'+v.sha+(v.env!=='production'?' ('+v.env+')':'');
-}).catch(()=>{});
+// deploy is actually live on a given device without checking Vercel — teacher area only, never
+// shown on the kids' game itself. Fails silently offline or wherever /api isn't available.
+if(new URLSearchParams(location.search).get('teacher')){
+  fetch('/api/version').then(r=>r.json()).then(v=>{
+    if(v && v.sha) $('#versionTag').textContent = 'v.'+v.sha+(v.env!=='production'?' ('+v.env+')':'');
+  }).catch(()=>{});
+}
 
 /* ---------- PWA: register service worker ---------- */
 if ('serviceWorker' in navigator) {
