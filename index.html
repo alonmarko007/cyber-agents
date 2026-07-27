@@ -20,14 +20,25 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="סוכני הסייבר" id="appleTitle">
 <script>
-  /* If this page was opened via the teacher link (?teacher=1), swap the PWA identity — manifest,
-     title, and home-screen icon — BEFORE the user gets a chance to "Add to Home Screen", so the
-     saved icon/name/launch-target are teacher-specific instead of the kids' game's. */
-  if (new URLSearchParams(location.search).get('teacher')) {
+  /* Swap the PWA identity — manifest, title, and (for the teacher) home-screen icon — BEFORE the
+     user gets a chance to "Add to Home Screen", so whatever gets saved relaunches into the right
+     place instead of always landing on the bare kids' start screen.
+     - ?teacher=1 gets its own static manifest (fixed start_url, teacher-branded icon).
+     - ?class=CODE gets a manifest generated on the fly by /api/manifest, with THIS class's code
+       baked into start_url — otherwise every class link shared a single static manifest.webmanifest
+       (start_url "/"), so any class's installed icon reopened to the generic start screen, forgetting
+       which class it was ever for. */
+  var params = new URLSearchParams(location.search);
+  if (params.get('teacher')) {
     document.title = 'סוכני הסייבר — אזור מורה';
     document.getElementById('manifestLink').href = '/manifest-teacher.webmanifest';
     document.getElementById('appleTouchIcon').href = '/icons/teacher-apple-touch-icon.png';
     document.getElementById('appleTitle').content = 'אזור מורה';
+  } else if (params.get('class')) {
+    var className = params.get('cn') || '';
+    document.title = 'סוכני הסייבר' + (className ? ' — ' + className : '');
+    document.getElementById('manifestLink').href = '/api/manifest?' + params.toString();
+    document.getElementById('appleTitle').content = className || 'סוכני הסייבר';
   }
 </script>
 <style>
@@ -1127,18 +1138,21 @@ async function teacherClassReadyScreen(codeOrCls){
   go(`
     <div class="card center">
       <h2 class="neon">${escapeHtml(cls.name||'כיתה')}</h2>
-      <div class="chip" style="--c:var(--cyan);font-size:26px;letter-spacing:5px;padding:12px 18px;margin-top:8px">${escapeHtml(cls.code)}</div>
+      <div class="chip" id="pinChip" title="לחצו להעתקה" style="--c:var(--cyan);font-size:26px;letter-spacing:5px;padding:12px 18px;margin-top:8px;cursor:pointer">${escapeHtml(cls.code)}</div>
       <div class="name-label" style="margin-top:18px">1️⃣ שלחו לתלמידים — הצטרפות אוטומטית, בלי שום הגדרה מצידם</div>
-      <div class="link-box"><span id="studentLinkText">${escapeHtml(studentLink)}</span></div>
+      <div class="link-box" id="studentLinkBox" title="לחצו להעתקה" style="cursor:pointer"><span id="studentLinkText">${escapeHtml(studentLink)}</span></div>
       <button class="btn adv-btn big" id="copyStudentBtn" style="margin-top:8px">📋 העתק/י קישור לתלמידים</button>
       <div class="name-label" style="margin-top:18px">2️⃣ שלחו להורים — סיכום ויזואלי של הכיתה, בלי שמות או ציונים אישיים</div>
-      <div class="link-box"><span id="resultsLinkText">${escapeHtml(resultsLink)}</span></div>
+      <div class="link-box" id="resultsLinkBox" title="לחצו להעתקה" style="cursor:pointer"><span id="resultsLinkText">${escapeHtml(resultsLink)}</span></div>
       <button class="btn adv-btn big" id="copyResultsBtn" style="margin-top:8px">📋 העתק/י קישור להורים</button>
       <button class="btn big" id="viewResultsBtn" style="margin-top:16px">📊 צפה/י בתוצאות עכשיו</button>
       <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה לכל הכיתות שלי 🔙</button>
       <button class="btn danger big" id="deleteBtn" style="margin-top:18px">🗑️ מחק/י כיתה זו לצמיתות</button>
     </div>
   `);
+  $('#pinChip').onclick=()=>{ sfx.click(); copyText(cls.code, $('#pinChip')); };
+  $('#studentLinkBox').onclick=()=>{ sfx.click(); copyText(studentLink, $('#copyStudentBtn')); };
+  $('#resultsLinkBox').onclick=()=>{ sfx.click(); copyText(resultsLink, $('#copyResultsBtn')); };
   $('#copyStudentBtn').onclick=()=>{ sfx.click(); copyText(studentLink, $('#copyStudentBtn')); };
   $('#copyResultsBtn').onclick=()=>{ sfx.click(); copyText(resultsLink, $('#copyResultsBtn')); };
   $('#viewResultsBtn').onclick=()=>{ sfx.click(); classResultsScreen(cls.code); };
