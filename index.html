@@ -961,7 +961,7 @@ function classCodeScreen(){
     <div class="card center" style="--c:var(--cyan)">
       <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('network')}</div>
       <h2 style="margin-top:6px" class="neon">משחק/ת עם הכיתה, ${escapeHtml(S.name)}?</h2>
-      <p class="subtitle">אם המורה נתן/ה לך קוד כיתה — הקלד/י אותו כאן. אם לא, אפשר להמשיך ישר למשחק.</p>
+      <p class="subtitle">צריך/ה קוד כיתה מהמורה כדי להיכנס למשחק.</p>
       <label for="classCodeInput" class="name-label" style="margin-top:18px">קוד הכיתה מהמורה</label>
       <input id="classCodeInput" maxlength="6" placeholder="לדוגמה: KX7P2M"
         autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="codeErr"
@@ -970,7 +970,6 @@ function classCodeScreen(){
         box-shadow:0 0 14px -4px var(--cyan)" />
       <div id="codeErr" class="code-err" role="alert"></div>
       <button class="btn big" id="joinBtn">הצטרף/י לכיתה ▶</button>
-      <button class="btn ghost big" id="skipBtn" style="margin-top:10px">אין לי קוד — המשך למשחק</button>
     </div>
   `);
   const inp=$('#classCodeInput'), err=$('#codeErr'), joinBtn=$('#joinBtn');
@@ -984,11 +983,11 @@ function classCodeScreen(){
   };
   joinBtn.onclick=async()=>{
     const code=inp.value.trim();
-    if(!code) return showErr('צריך להקליד קוד, או ללחוץ «אין לי קוד».');
+    if(!code) return showErr('צריך להקליד קוד כיתה כדי להמשיך.');
     sfx.click();
     joinBtn.disabled=true; joinBtn.textContent='מצטרף/ת…';
     let cls=null;
-    try{ cls=await joinClass(code); }catch(e){ return showErr('אין חיבור לאינטרנט כרגע. אפשר להמשיך בלי כיתה.'); }
+    try{ cls=await joinClass(code); }catch(e){ return showErr('אין חיבור לאינטרנט כרגע. נסו שוב.'); }
     if(!cls) return showErr('הקוד הזה לא נמצא. כדאי לבדוק שוב עם המורה.');
     sfx.badge(); syncStudentProgress();
     // Confirm which class they actually landed in before moving on — a mistyped-but-valid
@@ -999,7 +998,6 @@ function classCodeScreen(){
     setTimeout(proceed, 1100);
   };
   inp.onkeydown=(e)=>{ if(e.key==='Enter') joinBtn.click(); };
-  $('#skipBtn').onclick=()=>{ sfx.click(); proceed(); };
 }
 
 /* ----- Onboarding (shown once, before the first station) ----- */
