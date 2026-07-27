@@ -700,8 +700,8 @@ async function sbFetch(path, opts={}){
   return res.status===204 ? null : res.json();
 }
 function genClassCode(){
-  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';  // no 0/O/1/I — easier to read/type aloud in class
-  let s=''; for(let i=0;i<6;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  // Digits only, like a Kahoot PIN — easier for kids to type/read/say aloud than mixed letters.
+  let s=''; for(let i=0;i<6;i++) s+=Math.floor(Math.random()*10);
   return s;
 }
 async function createClass(name){
@@ -969,18 +969,18 @@ function classCodeScreen(){
       <h2 style="margin-top:6px" class="neon">משחק/ת עם הכיתה, ${escapeHtml(S.name)}?</h2>
       <p class="subtitle">צריך/ה קוד כיתה מהמורה כדי להיכנס למשחק.</p>
       <label for="classCodeInput" class="name-label" style="margin-top:18px">קוד הכיתה מהמורה</label>
-      <input id="classCodeInput" maxlength="6" placeholder="לדוגמה: KX7P2M"
-        autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="codeErr"
+      <input id="classCodeInput" maxlength="6" placeholder="לדוגמה: 482915"
+        autocomplete="off" inputmode="numeric" pattern="[0-9]*" spellcheck="false" aria-describedby="codeErr"
         style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
         border:2px solid var(--cyan);color:var(--ink);font-size:20px;text-align:center;font-weight:900;letter-spacing:5px;
-        box-shadow:0 0 14px -4px var(--cyan)" />
+        font-variant-numeric:tabular-nums;box-shadow:0 0 14px -4px var(--cyan)" />
       <div id="codeErr" class="code-err" role="alert"></div>
       <button class="btn big" id="joinBtn">הצטרף/י לכיתה ▶</button>
     </div>
   `);
   const inp=$('#classCodeInput'), err=$('#codeErr'), joinBtn=$('#joinBtn');
   inp.focus();
-  inp.oninput=()=>{ inp.value=inp.value.toUpperCase(); err.textContent=''; err.style.color=''; inp.style.borderColor='var(--cyan)'; };
+  inp.oninput=()=>{ inp.value=inp.value.replace(/\D/g,''); err.textContent=''; err.style.color=''; inp.style.borderColor='var(--cyan)'; };
   const proceed=()=>{ S.classAsked=true; save(); S.onboarded ? mapScreen() : onboardingScreen(); };
   const showErr=(msg)=>{
     err.textContent=msg; inp.style.borderColor='var(--bad)';
@@ -1060,9 +1060,10 @@ function teacherHubScreen(){
         border:2px solid var(--cyan);color:var(--ink);font-size:17px;text-align:center;font-weight:700" />
       <button class="btn big" id="createBtn" style="margin-top:10px">➕ צור/י כיתה וקבל/י PIN</button>
       <div class="name-label" style="margin-top:18px">יש לך כבר קוד PIN (ממכשיר אחר)?</div>
-      <input id="codeInput" maxlength="6" placeholder="לדוגמה: KX7P2M"
+      <input id="codeInput" maxlength="6" placeholder="לדוגמה: 482915" inputmode="numeric" pattern="[0-9]*"
         style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
-        border:2px solid var(--line);color:var(--ink);font-size:18px;text-align:center;font-weight:900;letter-spacing:4px" />
+        border:2px solid var(--line);color:var(--ink);font-size:18px;text-align:center;font-weight:900;letter-spacing:4px;
+        font-variant-numeric:tabular-nums" />
       <button class="btn ghost big" id="viewBtn" style="margin-top:8px">טען/י לפי PIN</button>
       <div id="myClassesWrap"></div>
     </div>
