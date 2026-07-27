@@ -170,6 +170,8 @@
   .onboard-text b{color:var(--cyan)}
   .link-box{margin-top:8px;background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:10px 12px;
       font-size:12px;color:var(--muted);word-break:break-all;text-align:center;direction:ltr}
+  .btn-row{display:flex;gap:8px;margin-top:8px}
+  .btn-row .btn{flex:1;margin-top:0;text-align:center;font-size:15px;padding:13px 10px}
   .topic-bar-row{margin-top:10px}
   .topic-bar-head{display:flex;align-items:center;gap:8px;margin-bottom:5px}
   .topic-bar-icon{width:20px;height:20px;flex-shrink:0}
@@ -1139,12 +1141,17 @@ async function teacherClassReadyScreen(codeOrCls){
       <div class="chip" id="pinChip" title="לחצו להעתקה" style="--c:var(--cyan);font-size:26px;letter-spacing:5px;padding:12px 18px;margin-top:8px;cursor:pointer">${escapeHtml(cls.code)}</div>
       <div class="name-label" style="margin-top:18px">1️⃣ שלחו לתלמידים — הצטרפות אוטומטית, בלי שום הגדרה מצידם</div>
       <div class="link-box" id="studentLinkBox" title="לחצו להעתקה" style="cursor:pointer"><span id="studentLinkText">${escapeHtml(studentLink)}</span></div>
-      <button class="btn adv-btn big" id="copyStudentBtn" style="margin-top:8px">📋 העתק/י קישור לתלמידים</button>
+      <div class="btn-row">
+        <button class="btn adv-btn" id="copyStudentBtn">📋 העתק/י קישור</button>
+        <a class="btn ghost" id="openStudentBtn" href="${escapeHtml(studentLink)}" target="_blank" rel="noopener">🔗 פתח/י קישור</a>
+      </div>
       <div class="name-label" style="margin-top:18px">2️⃣ שלחו להורים — סיכום ויזואלי של הכיתה, בלי שמות או ציונים אישיים</div>
       <div class="link-box" id="resultsLinkBox" title="לחצו להעתקה" style="cursor:pointer"><span id="resultsLinkText">${escapeHtml(resultsLink)}</span></div>
-      <button class="btn adv-btn big" id="copyResultsBtn" style="margin-top:8px">📋 העתק/י קישור להורים</button>
-      <button class="btn big" id="viewResultsBtn" style="margin-top:16px">📊 צפה/י בתוצאות עכשיו</button>
-      <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה לכל הכיתות שלי 🔙</button>
+      <div class="btn-row">
+        <button class="btn adv-btn" id="copyResultsBtn">📋 העתק/י קישור</button>
+        <a class="btn ghost" id="openResultsBtn" href="${escapeHtml(resultsLink)}" target="_blank" rel="noopener">🔗 פתח/י קישור</a>
+      </div>
+      <button class="btn ghost big" id="backBtn" style="margin-top:16px">חזרה לכל הכיתות שלי 🔙</button>
       <button class="btn danger big" id="deleteBtn" style="margin-top:18px">🗑️ מחק/י כיתה זו לצמיתות</button>
     </div>
   `);
@@ -1153,7 +1160,8 @@ async function teacherClassReadyScreen(codeOrCls){
   $('#resultsLinkBox').onclick=()=>{ sfx.click(); copyText(resultsLink, $('#copyResultsBtn')); };
   $('#copyStudentBtn').onclick=()=>{ sfx.click(); copyText(studentLink, $('#copyStudentBtn')); };
   $('#copyResultsBtn').onclick=()=>{ sfx.click(); copyText(resultsLink, $('#copyResultsBtn')); };
-  $('#viewResultsBtn').onclick=()=>{ sfx.click(); classResultsScreen(cls.code); };
+  $('#openStudentBtn').onclick=()=>{ sfx.click(); };
+  $('#openResultsBtn').onclick=()=>{ sfx.click(); };
   $('#backBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
   $('#deleteBtn').onclick=async()=>{
     if(!confirm(`למחוק לצמיתות את הכיתה "${cls.name}" (${cls.code})? כל נתוני התלמידים שהצטרפו אליה יימחקו ולא ניתן לשחזר.`)) return;
