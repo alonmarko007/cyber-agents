@@ -90,6 +90,9 @@
   #screen{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
           display:flex;flex-direction:column}
   canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+  .version-tag{position:fixed;bottom:4px;left:6px;z-index:2;font-size:9px;letter-spacing:.02em;
+    color:rgba(143,160,200,.4);font-family:ui-monospace,'Courier New',monospace;
+    direction:ltr;pointer-events:none;user-select:none}
 
   h1,h2,h3{margin:0}
   .neon{text-shadow:0 0 8px currentColor,0 0 22px currentColor}
@@ -346,6 +349,7 @@
 </head>
 <body>
 <canvas id="confetti"></canvas>
+<div id="versionTag" class="version-tag" aria-hidden="true"></div>
 <div id="app">
   <div id="hud">
     <div class="hud-rank" id="hudRank">מתלמד/ת<small>סוכני הסייבר</small></div>
@@ -1907,6 +1911,13 @@ window.addEventListener('error', ()=>{
   }
   startScreen();
 })();
+
+// Small on-screen build marker (bottom-left, low-opacity) so it's possible to confirm which
+// deploy is actually live on a given device without checking Vercel — fails silently offline
+// or wherever /api isn't available (e.g. a plain static preview).
+fetch('/api/version').then(r=>r.json()).then(v=>{
+  if(v && v.sha) $('#versionTag').textContent = 'v.'+v.sha+(v.env!=='production'?' ('+v.env+')':'');
+}).catch(()=>{});
 
 /* ---------- PWA: register service worker ---------- */
 if ('serviceWorker' in navigator) {

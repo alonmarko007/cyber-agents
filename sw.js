@@ -30,6 +30,13 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
 
+  // Version marker: always hit the network — the whole point is to reflect the current deploy,
+  // so it must never get stuck on whatever response happened to be cached first.
+  if (url.pathname === '/api/version') {
+    e.respondWith(fetch(req));
+    return;
+  }
+
   // Navigations: network-first so updates show; fall back to cached shell offline.
   if (req.mode === 'navigate') {
     e.respondWith(
