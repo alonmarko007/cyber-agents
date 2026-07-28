@@ -699,33 +699,28 @@ async function sbFetch(path, opts={}){
   if(!res.ok) throw new Error('sb '+res.status);
   return res.status===204 ? null : res.json();
 }
-function genClassCode(){
-  // Digits only, like a Kahoot PIN — easier for kids to type/read/say aloud than mixed letters.
-  let s=''; for(let i=0;i<6;i++) s+=Math.floor(Math.random()*10);
-  return s;
+// All classroom reads/writes go through SECURITY DEFINER Postgres functions (see the
+// lock_down_classroom_tables_rpc_only migration) instead of direct table access — the
+// classes/students tables have no RLS policies left, so this is the only way in, and it's
+// scoped to exactly what each operation needs (e.g. no function ever returns a student's name
+// to anyone but that student's own device).
+async function sbRpc(fn, params){
+  return sbFetch(`rpc/${fn}`,{method:'POST', body:JSON.stringify(params)});
 }
 async function createClass(name){
-  for(let i=0;i<5;i++){
-    const code=genClassCode();
-    try{
-      const rows=await sbFetch('classes',{method:'POST',headers:{'Prefer':'return=representation'},
-        body:JSON.stringify({code, name:(name||'').trim()||'כיתה ללא שם'})});
-      return rows[0];
-    }catch(e){ /* code collision (rare) — try another */ }
-  }
-  throw new Error('could not create class');
+  const rows=await sbRpc('create_class', {p_name:(name||'').trim()||'כיתה ללא שם'});
+  return rows[0];
 }
 async function findClassByCode(code){
-  const rows=await sbFetch(`classes?code=eq.${encodeURIComponent((code||'').trim().toUpperCase())}&select=*`);
+  const rows=await sbRpc('find_class_by_code', {p_code:(code||'').trim()});
   return rows[0]||null;
 }
-async function countStudents(classId){
-  const rows=await sbFetch(`students?class_id=eq.${classId}&select=id`);
-  return rows.length;
+async function countStudents(code){
+  return sbRpc('count_class_students', {p_code:(code||'').trim()});
 }
-async function deleteClass(classId){
+async function deleteClassByCode(code){
   // students cascade-delete automatically (FK on delete cascade) — this removes all of the class's data.
-  await sbFetch(`classes?id=eq.${classId}`,{method:'DELETE'});
+  await sbRpc('delete_class_by_code', {p_code:(code||'').trim()});
 }
 /* ---------- teacher's local class list (this device only — no login, just a memory aid) ---------- */
 const TEACHER_KEY='cyberAgentsTeacherClasses';
@@ -745,24 +740,21 @@ async function joinClass(code){
   return cls;
 }
 async function syncStudentProgress(){
-  if(!S.classId || !S.deviceId) return;
+  if(!S.classCode || !S.deviceId) return;
   try{
-    await sbFetch('students?on_conflict=class_id,device_id',{
-      method:'POST',
-      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify({
-        class_id:S.classId, device_id:S.deviceId, name:S.name||'סוכן/ת',
-        score:S.score, stations_done:S.done.length, total_stations:STATIONS.length,
-        weak_topics:S.weakTopics||[], done_stations:S.done||[], advanced_done:!!S.advancedDone
-      })
+    await sbRpc('sync_student_progress', {
+      p_code:S.classCode, p_device_id:S.deviceId, p_name:S.name||'סוכן/ת',
+      p_score:S.score, p_stations_done:S.done.length, p_total_stations:STATIONS.length,
+      p_weak_topics:S.weakTopics||[], p_done_stations:S.done||[], p_advanced_done:!!S.advancedDone
     });
   }catch(e){ /* offline / unreachable — solo play is unaffected either way */ }
 }
 // Class-wide aggregate only — never returns individual names/scores (privacy: this powers the parent-facing link).
+// get_class_students_safe() never selects name/device_id at the database level, not just at this call site.
 async function loadClassResults(code){
   const cls=await findClassByCode(code);
   if(!cls) return null;
-  const students=await sbFetch(`students?class_id=eq.${cls.id}&select=score,stations_done,total_stations,weak_topics,done_stations,advanced_done`);
+  const students=await sbRpc('get_class_students_safe', {p_code:code});
   const n=students.length;
   const avgScore=n? Math.round(students.reduce((s,x)=>s+x.score,0)/n) : 0;
   const completedCount=students.filter(x=>x.stations_done>=x.total_stations).length;
@@ -815,7 +807,7 @@ function load(){
 }
 function save(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays,onboarded:S.onboarded,weakTopics:S.weakTopics,reviewDone:S.reviewDone,deviceId:S.deviceId,classId:S.classId,classCode:S.classCode,className:S.className,classAsked:S.classAsked})); }catch(e){}
-  if(S.classId) syncStudentProgress();
+  if(S.classCode) syncStudentProgress();
 }
 load();
 
@@ -1098,7 +1090,7 @@ async function renderMyClassesList(){
   try{
     counts=await Promise.all(mine.map(async c=>{
       try{ const cls=await findClassByCode(c.code); if(!cls) return {...c, n:null, gone:true};
-        const n=await countStudents(cls.id); return {...c, name:cls.name, n}; }
+        const n=await countStudents(cls.code); return {...c, name:cls.name, n}; }
       catch(e){ return {...c, n:null}; }
     }));
   }catch(e){ counts=mine.map(c=>({...c, n:null})); }
@@ -1110,7 +1102,7 @@ async function renderMyClassesList(){
         <div class="myclass-code">PIN: ${escapeHtml(c.code)}</div>
       </div>
       <div class="myclass-count">${c.gone? 'לא נמצאה' : (c.n==null?'—':c.n+' 🧑‍🎓')}</div>
-      <button class="myclass-del" data-del="${escapeHtml(c.code)}" data-delid="${escapeHtml(c.id||'')}" title="מחק/י כיתה">🗑️</button>
+      <button class="myclass-del" data-del="${escapeHtml(c.code)}" title="מחק/י כיתה">🗑️</button>
     </div>`).join('')}</div>`;
   document.querySelectorAll('.myclass-row').forEach(row=>{
     row.onclick=(e)=>{ if(e.target.closest('.myclass-del')) return; sfx.click(); teacherClassReadyScreen(row.dataset.code); };
@@ -1118,11 +1110,11 @@ async function renderMyClassesList(){
   document.querySelectorAll('.myclass-del').forEach(btn=>{
     btn.onclick=async(e)=>{
       e.stopPropagation();
-      const code=btn.dataset.del, id=btn.dataset.delid;
+      const code=btn.dataset.del;
       if(!confirm(`למחוק לצמיתות את הכיתה ${code}? כל נתוני התלמידים שהצטרפו אליה יימחקו ולא ניתן לשחזר.`)) return;
       sfx.click();
       forgetMyClass(code);
-      try{ if(id) await deleteClass(id); else { const cls=await findClassByCode(code); if(cls) await deleteClass(cls.id); } }
+      try{ await deleteClassByCode(code); }
       catch(e){ /* already forgotten locally even if the network call failed */ }
       renderMyClassesList();
     };
@@ -1172,7 +1164,7 @@ async function teacherClassReadyScreen(codeOrCls){
     if(!confirm(`למחוק לצמיתות את הכיתה "${cls.name}" (${cls.code})? כל נתוני התלמידים שהצטרפו אליה יימחקו ולא ניתן לשחזר.`)) return;
     sfx.click();
     forgetMyClass(cls.code);
-    try{ await deleteClass(cls.id); }catch(e){ /* already forgotten locally even if the network call failed */ }
+    try{ await deleteClassByCode(cls.code); }catch(e){ /* already forgotten locally even if the network call failed */ }
     teacherHubScreen();
   };
 }
