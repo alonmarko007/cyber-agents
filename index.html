@@ -1113,9 +1113,12 @@ async function renderMyClassesList(){
       const code=btn.dataset.del;
       if(!confirm(`למחוק לצמיתות את הכיתה ${code}? כל נתוני התלמידים שהצטרפו אליה יימחקו ולא ניתן לשחזר.`)) return;
       sfx.click();
-      forgetMyClass(code);
+      // Delete on the server FIRST, and only forget the code locally once that succeeded.
+      // The teacher's code list is the ONLY way back to a class, so dropping it before a
+      // failed request would strand the class (and its students) in the database forever.
       try{ await deleteClassByCode(code); }
-      catch(e){ /* already forgotten locally even if the network call failed */ }
+      catch(err){ alert('לא הצלחנו למחוק כרגע (בעיית רשת). הכיתה נשארה, אפשר לנסות שוב.'); return; }
+      forgetMyClass(code);
       renderMyClassesList();
     };
   });
@@ -1163,8 +1166,10 @@ async function teacherClassReadyScreen(codeOrCls){
   $('#deleteBtn').onclick=async()=>{
     if(!confirm(`למחוק לצמיתות את הכיתה "${cls.name}" (${cls.code})? כל נתוני התלמידים שהצטרפו אליה יימחקו ולא ניתן לשחזר.`)) return;
     sfx.click();
+    // Server first, then forget locally — see the note on the other delete path.
+    try{ await deleteClassByCode(cls.code); }
+    catch(err){ alert('לא הצלחנו למחוק כרגע (בעיית רשת). הכיתה נשארה, אפשר לנסות שוב.'); return; }
     forgetMyClass(cls.code);
-    try{ await deleteClassByCode(cls.code); }catch(e){ /* already forgotten locally even if the network call failed */ }
     teacherHubScreen();
   };
 }
