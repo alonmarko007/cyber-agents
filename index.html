@@ -690,50 +690,33 @@ const SAVE_KEY = 'cyberAgentsSave';
 
 /* ---------- classroom mode (optional, opt-in — only touches the network if a class code is used) ----------
    Talks directly to Supabase's REST API (PostgREST) with plain fetch — no SDK, keeps the app dependency-free.
-   Teachers sign in (email one-time code) and own their classes; students need no account at all —
+   Teachers identify with one personal code and own their classes; students need nothing at all —
    the class code is still all they need to join. */
 const SB_URL='https://kqdnvdwznyxgaxzjytjl.supabase.co';
 const SB_KEY='sb_publishable_FU3z8in7ZztjPvInBeG8Sg_nKOuwPjV';
 
-/* ---------- teacher accounts (Supabase Auth, email one-time code — no password, no SDK) ----------
-   The class list lives on the account server-side, so clearing the browser or switching devices
-   never loses it: sign in again from anywhere and everything is there. */
-const AUTH_KEY='cyberAgentsTeacherSession';
-function getSession(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY))||null; }catch(e){ return null; } }
-function setSession(s){ try{ s? localStorage.setItem(AUTH_KEY, JSON.stringify(s)) : localStorage.removeItem(AUTH_KEY); }catch(e){} }
-function signedIn(){ const s=getSession(); return !!(s && s.access_token); }
-function myEmail(){ const s=getSession(); return (s && s.user && s.user.email) || ''; }
-async function authFetch(path, body){
-  const res=await fetch(`${SB_URL}/auth/v1/${path}`, {
-    method:'POST', headers:{ 'apikey':SB_KEY, 'Content-Type':'application/json' }, body:JSON.stringify(body)
-  });
-  const data=await res.json().catch(()=>({}));
-  if(!res.ok) throw new Error(data.error_description || data.msg || data.error || ('auth '+res.status));
-  return data;
-}
-async function sendLoginCode(email){ return authFetch('otp', {email:(email||'').trim(), create_user:true}); }
-async function verifyLoginCode(email, code){
-  const d=await authFetch('verify', {email:(email||'').trim(), token:(code||'').trim(), type:'email'});
-  if(d.access_token) setSession(d);
-  return d;
-}
-async function refreshSession(){
-  const s=getSession();
-  if(!s || !s.refresh_token) return null;
-  try{
-    const d=await authFetch('token?grant_type=refresh_token', {refresh_token:s.refresh_token});
-    if(d.access_token){ setSession(d); return d; }
-  }catch(e){ setSession(null); }
-  return null;
-}
-function signOut(){ setSession(null); }
+/* ---------- teacher identity (one personal code, nothing else) ----------
+   A teacher's code IS their identity here: it ties classes to them and works from any device.
+   The class list lives on the server keyed by that code, so a cleared browser or a new phone
+   loses nothing — type the code again and everything is back. It is 12 digits, not 6, because
+   a 6-digit secret is small enough to guess by brute force, and this one guards class rosters. */
+const TEACHER_KEY='cyberAgentsTeacherCode';
+function digitsOnly(s){ return (s||'').replace(/\D/g,''); }
+// Shown in groups of four so it can be read aloud and copied by hand. The server strips the
+// spaces before matching, so a teacher may type it either way.
+function formatTeacherCode(c){ return digitsOnly(c).replace(/(\d{4})(?=\d)/g,'$1 '); }
+function maskTeacherCode(c){ const d=digitsOnly(c); return d ? '•••• •••• '+d.slice(-4) : ''; }
+function getTeacherCode(){ try{ return localStorage.getItem(TEACHER_KEY)||''; }catch(e){ return ''; } }
+function setTeacherCode(c){ try{ c ? localStorage.setItem(TEACHER_KEY, digitsOnly(c)) : localStorage.removeItem(TEACHER_KEY); }catch(e){} }
+function signedIn(){ return !!getTeacherCode(); }
+function signOut(){ setTeacherCode(''); }
+// The server answers a rejected teacher code with a 400; anything else is the network failing.
+function isBadCodeError(e){ return /^sb 4/.test(String((e&&e.message)||'')); }
 
 // A request that never answers is worse than one that fails: it leaves the player watching a
 // spinner with no way forward. Cap every call so an unreachable backend surfaces as a real error.
 const SB_TIMEOUT_MS=12000;
-async function sbFetch(path, opts={}, allowRetry=true){
-  const s=getSession();
-  const token=(s && s.access_token) ? s.access_token : SB_KEY;
+async function sbFetch(path, opts={}){
   const ctrl=(typeof AbortController!=='undefined') ? new AbortController() : null;
   const timer=ctrl ? setTimeout(()=>ctrl.abort(), SB_TIMEOUT_MS) : null;
   let res;
@@ -741,13 +724,9 @@ async function sbFetch(path, opts={}, allowRetry=true){
     res=await fetch(`${SB_URL}/rest/v1/${path}`, {
       ...opts,
       ...(ctrl?{signal:ctrl.signal}:{}),
-      headers:{ 'apikey':SB_KEY, 'Authorization':`Bearer ${token}`, 'Content-Type':'application/json', ...(opts.headers||{}) }
+      headers:{ 'apikey':SB_KEY, 'Authorization':`Bearer ${SB_KEY}`, 'Content-Type':'application/json', ...(opts.headers||{}) }
     });
   } finally { if(timer) clearTimeout(timer); }
-  // An expired access token shouldn't look like a failure — refresh once, then retry.
-  if((res.status===401 || res.status===403) && allowRetry && s && s.refresh_token){
-    if(await refreshSession()) return sbFetch(path, opts, false);
-  }
   if(!res.ok) throw new Error('sb '+res.status);
   return res.status===204 ? null : res.json();
 }
@@ -759,8 +738,13 @@ async function sbFetch(path, opts={}, allowRetry=true){
 async function sbRpc(fn, params){
   return sbFetch(`rpc/${fn}`,{method:'POST', body:JSON.stringify(params)});
 }
+// Hands back a brand-new teacher code. This is the only moment it exists in the clear — the
+// server keeps just a hash of it, so it can never be looked up or recovered afterwards.
+async function createTeacherCode(){
+  return sbRpc('create_teacher', {});
+}
 async function createClass(name){
-  const rows=await sbRpc('create_class', {p_name:(name||'').trim()||'כיתה ללא שם'});
+  const rows=await sbRpc('create_class', {p_name:(name||'').trim()||'כיתה ללא שם', p_teacher_code:getTeacherCode()});
   return rows[0];
 }
 async function findClassByCode(code){
@@ -769,17 +753,18 @@ async function findClassByCode(code){
 }
 async function deleteClassByCode(code){
   // students cascade-delete automatically (FK on delete cascade) — this removes all of the class's data.
-  // Server-side this only succeeds for the class's owner.
-  await sbRpc('delete_class_by_code', {p_code:(code||'').trim()});
+  // Server-side this only succeeds for the teacher whose code owns the class.
+  await sbRpc('delete_class_by_code', {p_code:(code||'').trim(), p_teacher_code:getTeacherCode()});
 }
-// The teacher's class list comes from their account, not from this device — this is what makes it
-// survive a cleared browser, a new phone, or any other local failure.
+// The class list comes from the server keyed by the teacher's code, not from this device — this
+// is what makes it survive a cleared browser, a new phone, or any other local failure. It also
+// doubles as the check that a typed code is real: an unknown code is rejected here.
 async function listMyClasses(){
-  return sbRpc('list_my_classes', {});
+  return sbRpc('list_my_classes', {p_teacher_code:getTeacherCode()});
 }
-// Adopt a class that was created before teacher accounts existed (owner_id is still null).
+// Adopt a class that has no teacher yet (created before teacher codes existed).
 async function claimClassByCode(code){
-  return sbRpc('claim_class_by_code', {p_code:(code||'').trim()});
+  return sbRpc('claim_class_by_code', {p_code:(code||'').trim(), p_teacher_code:getTeacherCode()});
 }
 async function joinClass(code){
   const cls=await findClassByCode(code);
@@ -1106,70 +1091,84 @@ function copyText(text, btn){
   if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(()=>flash('✅ הועתק!')).catch(fallback);
   else fallback();
 }
-/* ----- Teacher sign-in (email one-time code). Signing in is required to create/own classes, so a
-   teacher can never be left with classes that exist only on one device. ----- */
-function teacherLoginScreen(prefillEmail){
+/* ----- Teacher sign-in. The code IS the identity: no email, no password, no recovery. That
+   last part is the whole reason the code is shown so insistently when it is created. ----- */
+function teacherLoginScreen(prefill){
   go(`
     <div class="card center" style="--c:var(--cyan)">
       <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('shield')}</div>
       <h2 style="margin-top:6px" class="neon">כניסת מורה/ה</h2>
-      <p class="subtitle">נשלח לך קוד חד־פעמי למייל. בלי סיסמה, בלי הרשמה — וכך הכיתות שלך נשמרות לתמיד ונגישות מכל מכשיר.</p>
-      <label for="emailInput" class="name-label" style="margin-top:18px">כתובת המייל שלך</label>
-      <input id="emailInput" type="email" inputmode="email" autocomplete="email" spellcheck="false"
-        placeholder="you@school.co.il" value="${escapeHtml(prefillEmail||'')}"
+      <p class="subtitle">הקוד האישי שלך הוא כל מה שצריך — בלי מייל ובלי סיסמה. הוא מחזיק את כל הכיתות שלך, ועובד מכל מכשיר.</p>
+      <label for="teacherCodeInput" class="name-label" style="margin-top:18px">קוד המורה שלך</label>
+      <input id="teacherCodeInput" maxlength="14" inputmode="numeric" pattern="[0-9 ]*" autocomplete="off"
+        placeholder="0000 0000 0000" value="${escapeHtml(formatTeacherCode(prefill||''))}"
         style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;direction:ltr;
-        border:2px solid var(--cyan);color:var(--ink);font-size:16px;text-align:center;font-weight:700;
-        box-shadow:0 0 14px -4px var(--cyan)" />
-      <div id="loginErr" class="code-err" role="alert"></div>
-      <button class="btn big" id="sendCodeBtn">שלח/י לי קוד ▶</button>
-      <div class="hint">רק מורים נכנסים כאן. תלמידים משחקים בלי שום התחברות.</div>
-    </div>
-  `);
-  const inp=$('#emailInput'), err=$('#loginErr'), btn=$('#sendCodeBtn');
-  inp.focus();
-  inp.oninput=()=>{ err.textContent=''; inp.style.borderColor='var(--cyan)'; };
-  const fail=(msg)=>{ err.textContent=msg; inp.style.borderColor='var(--bad)'; btn.disabled=false; btn.textContent='שלח/י לי קוד ▶'; };
-  btn.onclick=async()=>{
-    const email=inp.value.trim();
-    if(!/^\S+@\S+\.\S+$/.test(email)) return fail('צריך כתובת מייל תקינה.');
-    sfx.click(); btn.disabled=true; btn.textContent='שולח…';
-    try{ await sendLoginCode(email); }
-    catch(e){ return fail('לא הצלחנו לשלוח קוד כרגע. נסו שוב בעוד רגע.'); }
-    teacherCodeScreen(email);
-  };
-  inp.onkeydown=(e)=>{ if(e.key==='Enter') btn.click(); };
-}
-function teacherCodeScreen(email){
-  go(`
-    <div class="card center" style="--c:var(--cyan)">
-      <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('check')}</div>
-      <h2 style="margin-top:6px" class="neon">בדוק/י את המייל</h2>
-      <p class="subtitle">שלחנו קוד בן 6 ספרות אל<br><b style="direction:ltr;display:inline-block">${escapeHtml(email)}</b></p>
-      <label for="otpInput" class="name-label" style="margin-top:18px">הקוד מהמייל</label>
-      <input id="otpInput" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
-        placeholder="------"
-        style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
-        border:2px solid var(--cyan);color:var(--ink);font-size:22px;text-align:center;font-weight:900;letter-spacing:6px;
+        border:2px solid var(--cyan);color:var(--ink);font-size:21px;text-align:center;font-weight:900;letter-spacing:3px;
         font-variant-numeric:tabular-nums;box-shadow:0 0 14px -4px var(--cyan)" />
-      <div id="otpErr" class="code-err" role="alert"></div>
-      <button class="btn big" id="verifyBtn">כניסה ▶</button>
-      <button class="btn ghost big" id="backLoginBtn" style="margin-top:10px">מייל אחר 🔙</button>
+      <div id="loginErr" class="code-err" role="alert"></div>
+      <button class="btn big" id="enterBtn">כניסה ▶</button>
+      <div class="name-label" style="margin-top:22px">אין לך עדיין קוד?</div>
+      <button class="btn ghost big" id="newCodeBtn" style="margin-top:8px">צור/י קוד מורה חדש</button>
+      <div class="hint">רק מורים נכנסים כאן. תלמידים משחקים בלי שום קוד מורה.</div>
     </div>
   `);
-  const inp=$('#otpInput'), err=$('#otpErr'), btn=$('#verifyBtn');
+  const inp=$('#teacherCodeInput'), err=$('#loginErr'), btn=$('#enterBtn');
   inp.focus();
-  inp.oninput=()=>{ inp.value=inp.value.replace(/\D/g,''); err.textContent=''; inp.style.borderColor='var(--cyan)'; };
-  const fail=(msg)=>{ err.textContent=msg; inp.style.borderColor='var(--bad)'; inp.focus(); inp.select(); btn.disabled=false; btn.textContent='כניסה ▶'; };
+  // Re-group the digits as they are typed, so the field always looks like the code they were given.
+  inp.oninput=()=>{ inp.value=formatTeacherCode(inp.value); err.textContent=''; inp.style.borderColor='var(--cyan)'; };
+  const fail=(msg)=>{
+    err.textContent=msg; inp.style.borderColor='var(--bad)'; inp.focus(); inp.select();
+    btn.disabled=false; btn.textContent='כניסה ▶';
+  };
   btn.onclick=async()=>{
-    const code=inp.value.trim();
-    if(code.length<6) return fail('צריך להקליד את 6 הספרות מהמייל.');
+    const code=digitsOnly(inp.value);
+    if(code.length!==12) return fail('קוד המורה הוא 12 ספרות.');
     sfx.click(); btn.disabled=true; btn.textContent='נכנס…';
-    try{ await verifyLoginCode(email, code); }
-    catch(e){ return fail('הקוד שגוי או פג תוקף. אפשר לבקש קוד חדש.'); }
+    // The only way to tell a real code from a wrong one is to ask the server, so the first
+    // class-list fetch doubles as the check. Store it first; clear it again if it is rejected.
+    setTeacherCode(code);
+    try{ await listMyClasses(); }
+    catch(e){
+      setTeacherCode('');
+      return fail(isBadCodeError(e) ? 'הקוד הזה לא נמצא. כדאי לבדוק ספרה ספרה.'
+                                    : 'אין חיבור לשרת כרגע. נסו שוב בעוד רגע.');
+    }
     sfx.badge(); teacherHubScreen();
   };
   inp.onkeydown=(e)=>{ if(e.key==='Enter') btn.click(); };
-  $('#backLoginBtn').onclick=()=>{ sfx.click(); teacherLoginScreen(email); };
+  $('#newCodeBtn').onclick=async()=>{
+    sfx.click();
+    const b=$('#newCodeBtn'); b.disabled=true; b.textContent='יוצר קוד…';
+    let code=null;
+    try{ code=await createTeacherCode(); }
+    catch(e){
+      b.disabled=false; b.textContent='צור/י קוד מורה חדש';
+      return fail('לא הצלחנו ליצור קוד כרגע. נסו שוב.');
+    }
+    setTeacherCode(code);
+    sfx.badge(); teacherNewCodeScreen(code);
+  };
+}
+// A code stored only as a hash cannot be mailed, reset, or recovered — if the teacher walks away
+// from this screen without keeping it, their classes are genuinely unreachable. So the screen does
+// one job only, and the way forward is deliberately a confirmation.
+function teacherNewCodeScreen(code){
+  go(`
+    <div class="card center" style="--c:var(--cyan)">
+      <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('check')}</div>
+      <h2 style="margin-top:6px" class="neon">זה הקוד שלך</h2>
+      <p class="subtitle">שמרו אותו עכשיו — בפתק, באנשי הקשר, איפה שנוח. <b>אי אפשר לשחזר אותו,</b> וכל הכיתות שלכם נפתחות רק איתו.</p>
+      <div style="margin:18px 0 6px;padding:16px;border-radius:16px;background:#0a1128;direction:ltr;
+        border:2px solid var(--cyan);box-shadow:0 0 22px -6px var(--cyan)">
+        <div style="font-size:clamp(22px,7vw,30px);font-weight:900;letter-spacing:4px;color:var(--cyan);
+          font-variant-numeric:tabular-nums">${escapeHtml(formatTeacherCode(code))}</div>
+      </div>
+      <button class="btn ghost big" id="copyCodeBtn" style="margin-top:8px">📋 העתקת הקוד</button>
+      <button class="btn big" id="savedBtn" style="margin-top:12px">שמרתי — המשך ▶</button>
+    </div>
+  `);
+  $('#copyCodeBtn').onclick=()=>{ sfx.click(); copyText(formatTeacherCode(code), $('#copyCodeBtn')); };
+  $('#savedBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
 }
 function teacherHubScreen(){
   if(!signedIn()) return teacherLoginScreen();
@@ -1188,12 +1187,13 @@ function teacherHubScreen(){
         border:2px solid var(--line);color:var(--ink);font-size:18px;text-align:center;font-weight:900;letter-spacing:4px;
         font-variant-numeric:tabular-nums" />
       <div id="claimErr" class="code-err" role="alert"></div>
-      <button class="btn ghost big" id="viewBtn">שייך/י לחשבון שלי</button>
+      <button class="btn ghost big" id="viewBtn">שייך/י לקוד שלי</button>
       <div id="myClassesWrap"></div>
       <div class="hint" style="margin-top:22px">
-        מחובר/ת כ־<b style="direction:ltr;display:inline-block">${escapeHtml(myEmail())}</b>
+        הקוד שלך: <b id="myCode" style="direction:ltr;display:inline-block;font-variant-numeric:tabular-nums">${escapeHtml(maskTeacherCode(getTeacherCode()))}</b>
+        <button class="link-btn" id="revealBtn" style="margin-inline-start:6px">הצגה</button>
       </div>
-      <button class="link-btn" id="signOutBtn">יציאה מהחשבון</button>
+      <button class="link-btn" id="signOutBtn">יציאה</button>
     </div>
   `);
   $('#createBtn').onclick=async()=>{
@@ -1214,11 +1214,18 @@ function teacherHubScreen(){
     let ok=false;
     try{ ok=await claimClassByCode(code); }
     catch(e){ err.textContent='בעיית רשת. נסו שוב.'; return; }
-    if(!ok){ err.textContent='הקוד לא נמצא, או שהכיתה כבר שייכת לחשבון אחר.'; return; }
+    if(!ok){ err.textContent='הקוד לא נמצא, או שהכיתה כבר שייכת למורה אחר/ת.'; return; }
     sfx.badge(); teacherClassReadyScreen(code);
   };
+  // The code is masked by default because this screen gets shown on a classroom projector.
+  $('#revealBtn').onclick=()=>{
+    sfx.click();
+    const el=$('#myCode'), b=$('#revealBtn'), shown=b.textContent==='הסתרה';
+    el.textContent = shown ? maskTeacherCode(getTeacherCode()) : formatTeacherCode(getTeacherCode());
+    b.textContent = shown ? 'הצגה' : 'הסתרה';
+  };
   $('#signOutBtn').onclick=()=>{
-    if(!confirm('לצאת מהחשבון? הכיתות יישארו שמורות — אפשר להיכנס שוב עם אותו מייל בכל זמן.')) return;
+    if(!confirm('לצאת? הכיתות נשמרות בשרת — אפשר לחזור בכל רגע עם אותו קוד מורה. בלי הקוד אין דרך לשחזר אותן.')) return;
     sfx.click(); signOut(); teacherLoginScreen();
   };
   renderMyClassesList();
@@ -1237,7 +1244,7 @@ async function renderMyClassesList(){
   }
   const loading=$('#myClassesLoading'); if(!loading) return;
   if(!mine.length){
-    loading.outerHTML=`<p class="subtitle" style="margin-top:20px">עוד אין כיתות בחשבון שלך. צרו את הראשונה למעלה 👆</p>`;
+    loading.outerHTML=`<p class="subtitle" style="margin-top:20px">עוד אין כיתות שמשויכות לקוד שלך. צרו את הראשונה למעלה 👆</p>`;
     return;
   }
   loading.outerHTML=`<div class="recap-title" style="margin-top:20px">📚 הכיתות שלי (${mine.length})</div>
@@ -2033,23 +2040,11 @@ window.addEventListener('error', ()=>{
 });
 
 /* ---------- boot ---------- */
-// If the teacher opened a sign-in LINK from the email instead of typing the code, Supabase returns
-// the session in the URL hash. Capture it before anything else so either style of email works.
-function captureSessionFromUrlHash(){
-  if(!location.hash || location.hash.indexOf('access_token=')===-1) return false;
-  const h=new URLSearchParams(location.hash.slice(1));
-  const access_token=h.get('access_token'), refresh_token=h.get('refresh_token');
-  if(!access_token) return false;
-  setSession({access_token, refresh_token, user:{email:''}});
-  try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
-  return true;
-}
 (function boot(){
   const params=new URLSearchParams(location.search);
   const resultsCode=params.get('results'), teacherFlag=params.get('teacher'), classCode=params.get('class'), classNameParam=params.get('cn');
-  const cameFromEmailLink=captureSessionFromUrlHash();
   if(resultsCode) return classResultsScreen(resultsCode);
-  if(teacherFlag || cameFromEmailLink) return teacherHubScreen();
+  if(teacherFlag) return teacherHubScreen();
   if(classCode){
     // Arriving through a class link already answers "are you playing with a class?" — don't ask again,
     // even if the join fetch is still in flight when the kid hits start.
