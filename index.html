@@ -687,15 +687,64 @@ const SAVE_KEY = 'cyberAgentsSave';
 
 /* ---------- classroom mode (optional, opt-in — only touches the network if a class code is used) ----------
    Talks directly to Supabase's REST API (PostgREST) with plain fetch — no SDK, keeps the app dependency-free.
-   The class "code" doubles as the access secret (like a Kahoot PIN): whoever has it can join or view the roster.
-   No login, no PII beyond the display name the player already chose. */
+   Teachers sign in (email one-time code) and own their classes; students need no account at all —
+   the class code is still all they need to join. */
 const SB_URL='https://kqdnvdwznyxgaxzjytjl.supabase.co';
 const SB_KEY='sb_publishable_FU3z8in7ZztjPvInBeG8Sg_nKOuwPjV';
-async function sbFetch(path, opts={}){
-  const res=await fetch(`${SB_URL}/rest/v1/${path}`, {
-    ...opts,
-    headers:{ 'apikey':SB_KEY, 'Authorization':`Bearer ${SB_KEY}`, 'Content-Type':'application/json', ...(opts.headers||{}) }
+
+/* ---------- teacher accounts (Supabase Auth, email one-time code — no password, no SDK) ----------
+   The class list lives on the account server-side, so clearing the browser or switching devices
+   never loses it: sign in again from anywhere and everything is there. */
+const AUTH_KEY='cyberAgentsTeacherSession';
+function getSession(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY))||null; }catch(e){ return null; } }
+function setSession(s){ try{ s? localStorage.setItem(AUTH_KEY, JSON.stringify(s)) : localStorage.removeItem(AUTH_KEY); }catch(e){} }
+function signedIn(){ const s=getSession(); return !!(s && s.access_token); }
+function myEmail(){ const s=getSession(); return (s && s.user && s.user.email) || ''; }
+async function authFetch(path, body){
+  const res=await fetch(`${SB_URL}/auth/v1/${path}`, {
+    method:'POST', headers:{ 'apikey':SB_KEY, 'Content-Type':'application/json' }, body:JSON.stringify(body)
   });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error_description || data.msg || data.error || ('auth '+res.status));
+  return data;
+}
+async function sendLoginCode(email){ return authFetch('otp', {email:(email||'').trim(), create_user:true}); }
+async function verifyLoginCode(email, code){
+  const d=await authFetch('verify', {email:(email||'').trim(), token:(code||'').trim(), type:'email'});
+  if(d.access_token) setSession(d);
+  return d;
+}
+async function refreshSession(){
+  const s=getSession();
+  if(!s || !s.refresh_token) return null;
+  try{
+    const d=await authFetch('token?grant_type=refresh_token', {refresh_token:s.refresh_token});
+    if(d.access_token){ setSession(d); return d; }
+  }catch(e){ setSession(null); }
+  return null;
+}
+function signOut(){ setSession(null); }
+
+// A request that never answers is worse than one that fails: it leaves the player watching a
+// spinner with no way forward. Cap every call so an unreachable backend surfaces as a real error.
+const SB_TIMEOUT_MS=12000;
+async function sbFetch(path, opts={}, allowRetry=true){
+  const s=getSession();
+  const token=(s && s.access_token) ? s.access_token : SB_KEY;
+  const ctrl=(typeof AbortController!=='undefined') ? new AbortController() : null;
+  const timer=ctrl ? setTimeout(()=>ctrl.abort(), SB_TIMEOUT_MS) : null;
+  let res;
+  try{
+    res=await fetch(`${SB_URL}/rest/v1/${path}`, {
+      ...opts,
+      ...(ctrl?{signal:ctrl.signal}:{}),
+      headers:{ 'apikey':SB_KEY, 'Authorization':`Bearer ${token}`, 'Content-Type':'application/json', ...(opts.headers||{}) }
+    });
+  } finally { if(timer) clearTimeout(timer); }
+  // An expired access token shouldn't look like a failure — refresh once, then retry.
+  if((res.status===401 || res.status===403) && allowRetry && s && s.refresh_token){
+    if(await refreshSession()) return sbFetch(path, opts, false);
+  }
   if(!res.ok) throw new Error('sb '+res.status);
   return res.status===204 ? null : res.json();
 }
@@ -715,23 +764,19 @@ async function findClassByCode(code){
   const rows=await sbRpc('find_class_by_code', {p_code:(code||'').trim()});
   return rows[0]||null;
 }
-async function countStudents(code){
-  return sbRpc('count_class_students', {p_code:(code||'').trim()});
-}
 async function deleteClassByCode(code){
   // students cascade-delete automatically (FK on delete cascade) — this removes all of the class's data.
+  // Server-side this only succeeds for the class's owner.
   await sbRpc('delete_class_by_code', {p_code:(code||'').trim()});
 }
-/* ---------- teacher's local class list (this device only — no login, just a memory aid) ---------- */
-const TEACHER_KEY='cyberAgentsTeacherClasses';
-function getMyClasses(){ try{ return JSON.parse(localStorage.getItem(TEACHER_KEY))||[]; }catch(e){ return []; } }
-function rememberMyClass(cls){
-  const list=getMyClasses().filter(c=>c.code!==cls.code);
-  list.unshift({code:cls.code, name:cls.name, created_at:cls.created_at});
-  try{ localStorage.setItem(TEACHER_KEY, JSON.stringify(list.slice(0,30))); }catch(e){}
+// The teacher's class list comes from their account, not from this device — this is what makes it
+// survive a cleared browser, a new phone, or any other local failure.
+async function listMyClasses(){
+  return sbRpc('list_my_classes', {});
 }
-function forgetMyClass(code){
-  try{ localStorage.setItem(TEACHER_KEY, JSON.stringify(getMyClasses().filter(c=>c.code!==code))); }catch(e){}
+// Adopt a class that was created before teacher accounts existed (owner_id is still null).
+async function claimClassByCode(code){
+  return sbRpc('claim_class_by_code', {p_code:(code||'').trim()});
 }
 async function joinClass(code){
   const cls=await findClassByCode(code);
@@ -806,7 +851,7 @@ function load(){
   if(!S.deviceId){ try{ S.deviceId=crypto.randomUUID(); }catch(e){ S.deviceId='d'+Date.now()+Math.random().toString(36).slice(2); } }
 }
 function save(){
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays,onboarded:S.onboarded,weakTopics:S.weakTopics,reviewDone:S.reviewDone,deviceId:S.deviceId,classId:S.classId,classCode:S.classCode,className:S.className,classAsked:S.classAsked})); }catch(e){}
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays,onboarded:S.onboarded,weakTopics:S.weakTopics,reviewDone:S.reviewDone,deviceId:S.deviceId,classId:S.classId,classCode:S.classCode,className:S.className,classAsked:S.classAsked,classSkippedOffline:S.classSkippedOffline})); }catch(e){}
   if(S.classCode) syncStudentProgress();
 }
 load();
@@ -968,12 +1013,24 @@ function classCodeScreen(){
         font-variant-numeric:tabular-nums;box-shadow:0 0 14px -4px var(--cyan)" />
       <div id="codeErr" class="code-err" role="alert"></div>
       <button class="btn big" id="joinBtn">הצטרף/י לכיתה ▶</button>
+      <button class="btn ghost big" id="soloBtn" hidden style="margin-top:10px">המשך/י בלי כיתה ▶</button>
+      <div class="hint" id="soloHint" hidden>ההתקדמות תישמר במכשיר שלך, ואפשר להצטרף לכיתה מאוחר יותר.</div>
     </div>
   `);
   const inp=$('#classCodeInput'), err=$('#codeErr'), joinBtn=$('#joinBtn');
   inp.focus();
   inp.oninput=()=>{ inp.value=inp.value.replace(/\D/g,''); err.textContent=''; err.style.color=''; inp.style.borderColor='var(--cyan)'; };
   const proceed=()=>{ S.classAsked=true; save(); S.onboarded ? mapScreen() : onboardingScreen(); };
+  // The stations are entirely offline content — a classroom server that's down must never be the
+  // reason a kid can't play at all. This is deliberately NOT the same as declining a class:
+  // classAsked stays unset, so they're offered the join again next time the game starts.
+  const proceedSolo=()=>{ S.classSkippedOffline=true; save(); S.onboarded ? mapScreen() : onboardingScreen(); };
+  const soloBtn=$('#soloBtn'), soloHint=$('#soloHint');
+  const offerSolo=()=>{ soloBtn.hidden=false; soloHint.hidden=false; };
+  soloBtn.onclick=()=>{ sfx.click(); proceedSolo(); };
+  // Someone already let through while the server was down shouldn't have to sit through the
+  // timeout again on every launch — give them the way out up front.
+  if(S.classSkippedOffline) offerSolo();
   const showErr=(msg)=>{
     err.textContent=msg; inp.style.borderColor='var(--bad)';
     inp.focus(); inp.select();                       // focus-management: land the kid back on the bad field
@@ -985,7 +1042,12 @@ function classCodeScreen(){
     sfx.click();
     joinBtn.disabled=true; joinBtn.textContent='מצטרף/ת…';
     let cls=null;
-    try{ cls=await joinClass(code); }catch(e){ return showErr('אין חיבור לאינטרנט כרגע. נסו שוב.'); }
+    try{ cls=await joinClass(code); }
+    catch(e){
+      // Distinct from a bad code: the code may well be fine, we just can't check it right now.
+      offerSolo();
+      return showErr('לא הצלחנו להתחבר לשרת הכיתות כרגע. אפשר לנסות שוב, או להמשיך בלי כיתה.');
+    }
     if(!cls) return showErr('הקוד הזה לא נמצא. כדאי לבדוק שוב עם המורה.');
     sfx.badge(); syncStudentProgress();
     // Confirm which class they actually landed in before moving on — a mistyped-but-valid
@@ -1041,7 +1103,73 @@ function copyText(text, btn){
   if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(()=>flash('✅ הועתק!')).catch(fallback);
   else fallback();
 }
+/* ----- Teacher sign-in (email one-time code). Signing in is required to create/own classes, so a
+   teacher can never be left with classes that exist only on one device. ----- */
+function teacherLoginScreen(prefillEmail){
+  go(`
+    <div class="card center" style="--c:var(--cyan)">
+      <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('shield')}</div>
+      <h2 style="margin-top:6px" class="neon">כניסת מורה/ה</h2>
+      <p class="subtitle">נשלח לך קוד חד־פעמי למייל. בלי סיסמה, בלי הרשמה — וכך הכיתות שלך נשמרות לתמיד ונגישות מכל מכשיר.</p>
+      <label for="emailInput" class="name-label" style="margin-top:18px">כתובת המייל שלך</label>
+      <input id="emailInput" type="email" inputmode="email" autocomplete="email" spellcheck="false"
+        placeholder="you@school.co.il" value="${escapeHtml(prefillEmail||'')}"
+        style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;direction:ltr;
+        border:2px solid var(--cyan);color:var(--ink);font-size:16px;text-align:center;font-weight:700;
+        box-shadow:0 0 14px -4px var(--cyan)" />
+      <div id="loginErr" class="code-err" role="alert"></div>
+      <button class="btn big" id="sendCodeBtn">שלח/י לי קוד ▶</button>
+      <div class="hint">רק מורים נכנסים כאן. תלמידים משחקים בלי שום התחברות.</div>
+    </div>
+  `);
+  const inp=$('#emailInput'), err=$('#loginErr'), btn=$('#sendCodeBtn');
+  inp.focus();
+  inp.oninput=()=>{ err.textContent=''; inp.style.borderColor='var(--cyan)'; };
+  const fail=(msg)=>{ err.textContent=msg; inp.style.borderColor='var(--bad)'; btn.disabled=false; btn.textContent='שלח/י לי קוד ▶'; };
+  btn.onclick=async()=>{
+    const email=inp.value.trim();
+    if(!/^\S+@\S+\.\S+$/.test(email)) return fail('צריך כתובת מייל תקינה.');
+    sfx.click(); btn.disabled=true; btn.textContent='שולח…';
+    try{ await sendLoginCode(email); }
+    catch(e){ return fail('לא הצלחנו לשלוח קוד כרגע. נסו שוב בעוד רגע.'); }
+    teacherCodeScreen(email);
+  };
+  inp.onkeydown=(e)=>{ if(e.key==='Enter') btn.click(); };
+}
+function teacherCodeScreen(email){
+  go(`
+    <div class="card center" style="--c:var(--cyan)">
+      <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('check')}</div>
+      <h2 style="margin-top:6px" class="neon">בדוק/י את המייל</h2>
+      <p class="subtitle">שלחנו קוד בן 6 ספרות אל<br><b style="direction:ltr;display:inline-block">${escapeHtml(email)}</b></p>
+      <label for="otpInput" class="name-label" style="margin-top:18px">הקוד מהמייל</label>
+      <input id="otpInput" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
+        placeholder="------"
+        style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
+        border:2px solid var(--cyan);color:var(--ink);font-size:22px;text-align:center;font-weight:900;letter-spacing:6px;
+        font-variant-numeric:tabular-nums;box-shadow:0 0 14px -4px var(--cyan)" />
+      <div id="otpErr" class="code-err" role="alert"></div>
+      <button class="btn big" id="verifyBtn">כניסה ▶</button>
+      <button class="btn ghost big" id="backLoginBtn" style="margin-top:10px">מייל אחר 🔙</button>
+    </div>
+  `);
+  const inp=$('#otpInput'), err=$('#otpErr'), btn=$('#verifyBtn');
+  inp.focus();
+  inp.oninput=()=>{ inp.value=inp.value.replace(/\D/g,''); err.textContent=''; inp.style.borderColor='var(--cyan)'; };
+  const fail=(msg)=>{ err.textContent=msg; inp.style.borderColor='var(--bad)'; inp.focus(); inp.select(); btn.disabled=false; btn.textContent='כניסה ▶'; };
+  btn.onclick=async()=>{
+    const code=inp.value.trim();
+    if(code.length<6) return fail('צריך להקליד את 6 הספרות מהמייל.');
+    sfx.click(); btn.disabled=true; btn.textContent='נכנס…';
+    try{ await verifyLoginCode(email, code); }
+    catch(e){ return fail('הקוד שגוי או פג תוקף. אפשר לבקש קוד חדש.'); }
+    sfx.badge(); teacherHubScreen();
+  };
+  inp.onkeydown=(e)=>{ if(e.key==='Enter') btn.click(); };
+  $('#backLoginBtn').onclick=()=>{ sfx.click(); teacherLoginScreen(email); };
+}
 function teacherHubScreen(){
+  if(!signedIn()) return teacherLoginScreen();
   go(`
     <div class="card center">
       <h2 class="neon">אזור מורה/ה</h2>
@@ -1051,13 +1179,18 @@ function teacherHubScreen(){
         style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
         border:2px solid var(--cyan);color:var(--ink);font-size:17px;text-align:center;font-weight:700" />
       <button class="btn big" id="createBtn" style="margin-top:10px">➕ צור/י כיתה וקבל/י PIN</button>
-      <div class="name-label" style="margin-top:18px">יש לך כבר קוד PIN (ממכשיר אחר)?</div>
+      <div class="name-label" style="margin-top:18px">כיתה קיימת שעדיין לא משויכת אליך?</div>
       <input id="codeInput" maxlength="6" placeholder="לדוגמה: 482915" inputmode="numeric" pattern="[0-9]*"
         style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
         border:2px solid var(--line);color:var(--ink);font-size:18px;text-align:center;font-weight:900;letter-spacing:4px;
         font-variant-numeric:tabular-nums" />
-      <button class="btn ghost big" id="viewBtn" style="margin-top:8px">טען/י לפי PIN</button>
+      <div id="claimErr" class="code-err" role="alert"></div>
+      <button class="btn ghost big" id="viewBtn">שייך/י לחשבון שלי</button>
       <div id="myClassesWrap"></div>
+      <div class="hint" style="margin-top:22px">
+        מחובר/ת כ־<b style="direction:ltr;display:inline-block">${escapeHtml(myEmail())}</b>
+      </div>
+      <button class="link-btn" id="signOutBtn">יציאה מהחשבון</button>
     </div>
   `);
   $('#createBtn').onclick=async()=>{
@@ -1071,37 +1204,47 @@ function teacherHubScreen(){
       $('#backBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
     }
   };
-  $('#viewBtn').onclick=()=>{
-    const code=$('#codeInput').value.trim();
+  $('#viewBtn').onclick=async()=>{
+    const code=$('#codeInput').value.trim(), err=$('#claimErr');
     if(!code) return;
-    sfx.click(); teacherClassReadyScreen(code);
+    sfx.click(); err.textContent='';
+    let ok=false;
+    try{ ok=await claimClassByCode(code); }
+    catch(e){ err.textContent='בעיית רשת. נסו שוב.'; return; }
+    if(!ok){ err.textContent='הקוד לא נמצא, או שהכיתה כבר שייכת לחשבון אחר.'; return; }
+    sfx.badge(); teacherClassReadyScreen(code);
+  };
+  $('#signOutBtn').onclick=()=>{
+    if(!confirm('לצאת מהחשבון? הכיתות יישארו שמורות — אפשר להיכנס שוב עם אותו מייל בכל זמן.')) return;
+    sfx.click(); signOut(); teacherLoginScreen();
   };
   renderMyClassesList();
 }
-// "How many classes has this teacher started, and how many kids joined each?" — a locally-remembered
-// list (this device only, no login) with a live student count fetched per class.
+// The teacher's classes, read from their account — one query, counts included. Because this comes
+// from the server rather than this device, it's identical on every phone/computer they sign in on.
 async function renderMyClassesList(){
-  const mine=getMyClasses();
   const wrap=$('#myClassesWrap'); if(!wrap) return;
-  if(!mine.length){ wrap.innerHTML=''; return; }
-  wrap.innerHTML=`<div class="recap-title" style="margin-top:20px">📚 הכיתות שלי (${mine.length})</div>
-    <p class="subtitle" id="myClassesLoading">טוען…</p>`;
-  let counts;
-  try{
-    counts=await Promise.all(mine.map(async c=>{
-      try{ const cls=await findClassByCode(c.code); if(!cls) return {...c, n:null, gone:true};
-        const n=await countStudents(cls.code); return {...c, name:cls.name, n}; }
-      catch(e){ return {...c, n:null}; }
-    }));
-  }catch(e){ counts=mine.map(c=>({...c, n:null})); }
+  wrap.innerHTML=`<p class="subtitle" id="myClassesLoading" style="margin-top:20px">טוען את הכיתות שלך…</p>`;
+  let mine;
+  try{ mine=await listMyClasses(); }
+  catch(e){
+    const l=$('#myClassesLoading');
+    if(l) l.outerHTML=`<p class="subtitle" style="margin-top:20px">לא הצלחנו לטעון את הכיתות (בעיית רשת). הן שמורות — נסו לרענן.</p>`;
+    return;
+  }
   const loading=$('#myClassesLoading'); if(!loading) return;
-  loading.outerHTML=`<div class="myclass-list">${counts.map(c=>`
-    <div class="myclass-row" data-code="${escapeHtml(c.code)}" data-id="${escapeHtml(c.id||'')}">
+  if(!mine.length){
+    loading.outerHTML=`<p class="subtitle" style="margin-top:20px">עוד אין כיתות בחשבון שלך. צרו את הראשונה למעלה 👆</p>`;
+    return;
+  }
+  loading.outerHTML=`<div class="recap-title" style="margin-top:20px">📚 הכיתות שלי (${mine.length})</div>
+    <div class="myclass-list">${mine.map(c=>`
+    <div class="myclass-row" data-code="${escapeHtml(c.code)}">
       <div class="myclass-info">
         <div class="myclass-name">${escapeHtml(c.name||'כיתה')}</div>
         <div class="myclass-code">PIN: ${escapeHtml(c.code)}</div>
       </div>
-      <div class="myclass-count">${c.gone? 'לא נמצאה' : (c.n==null?'—':c.n+' 🧑‍🎓')}</div>
+      <div class="myclass-count">${c.students} 🧑‍🎓</div>
       <button class="myclass-del" data-del="${escapeHtml(c.code)}" title="מחק/י כיתה">🗑️</button>
     </div>`).join('')}</div>`;
   document.querySelectorAll('.myclass-row').forEach(row=>{
@@ -1118,7 +1261,6 @@ async function renderMyClassesList(){
       // failed request would strand the class (and its students) in the database forever.
       try{ await deleteClassByCode(code); }
       catch(err){ alert('לא הצלחנו למחוק כרגע (בעיית רשת). הכיתה נשארה, אפשר לנסות שוב.'); return; }
-      forgetMyClass(code);
       renderMyClassesList();
     };
   });
@@ -1133,7 +1275,6 @@ async function teacherClassReadyScreen(codeOrCls){
     $('#backBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
     return;
   }
-  rememberMyClass(cls);
   const studentLink=studentLinkFor(cls), resultsLink=linkFor('results',cls.code);
   go(`
     <div class="card center">
@@ -1169,7 +1310,6 @@ async function teacherClassReadyScreen(codeOrCls){
     // Server first, then forget locally — see the note on the other delete path.
     try{ await deleteClassByCode(cls.code); }
     catch(err){ alert('לא הצלחנו למחוק כרגע (בעיית רשת). הכיתה נשארה, אפשר לנסות שוב.'); return; }
-    forgetMyClass(cls.code);
     teacherHubScreen();
   };
 }
@@ -1890,11 +2030,23 @@ window.addEventListener('error', ()=>{
 });
 
 /* ---------- boot ---------- */
+// If the teacher opened a sign-in LINK from the email instead of typing the code, Supabase returns
+// the session in the URL hash. Capture it before anything else so either style of email works.
+function captureSessionFromUrlHash(){
+  if(!location.hash || location.hash.indexOf('access_token=')===-1) return false;
+  const h=new URLSearchParams(location.hash.slice(1));
+  const access_token=h.get('access_token'), refresh_token=h.get('refresh_token');
+  if(!access_token) return false;
+  setSession({access_token, refresh_token, user:{email:''}});
+  try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+  return true;
+}
 (function boot(){
   const params=new URLSearchParams(location.search);
   const resultsCode=params.get('results'), teacherFlag=params.get('teacher'), classCode=params.get('class'), classNameParam=params.get('cn');
+  const cameFromEmailLink=captureSessionFromUrlHash();
   if(resultsCode) return classResultsScreen(resultsCode);
-  if(teacherFlag) return teacherHubScreen();
+  if(teacherFlag || cameFromEmailLink) return teacherHubScreen();
   if(classCode){
     // Arriving through a class link already answers "are you playing with a class?" — don't ask again,
     // even if the join fetch is still in flight when the kid hits start.
