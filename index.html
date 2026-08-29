@@ -136,6 +136,9 @@
     background:#0a1128;border:2px solid var(--cyan);color:var(--ink);font-size:17px;text-align:center;font-weight:700;
     box-shadow:0 0 14px -4px var(--cyan)}
   input#nameInput:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.25)}
+  /* A class like .btn sets its own display, which silently beats the browser's default
+     rule for [hidden] — an element we hid in markup would still show up. Make hidden win. */
+  [hidden]{display:none !important}
   .btn{display:inline-block;padding:15px 26px;border-radius:16px;font-weight:900;font-size:18px;
        background:linear-gradient(180deg,var(--cyan),#00a7c4);color:#04121a;
        box-shadow:0 8px 0 #026277,0 10px 24px rgba(0,229,255,.35);transition:transform .06s,box-shadow .06s}
