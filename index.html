@@ -163,6 +163,10 @@
   .myclass-del{flex-shrink:0;background:none;color:var(--muted);font-size:18px;padding:6px 10px;
       min-height:44px;min-width:44px;border-radius:10px}
   .recap-title{margin-top:18px;font-weight:900;font-size:14px;color:var(--yellow)}
+  .takeaway{
+    margin:8px auto 0;max-width:34ch;font-size:16px;font-weight:700;line-height:1.55;
+    color:var(--ink);text-wrap:balance;
+  }
   .recap-list{list-style:none;margin:10px 0 0;padding:0;text-align:start;display:flex;flex-direction:column;gap:8px}
   .recap-list li{background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:9px 12px;
        font-size:13px;line-height:1.4;color:var(--ink);opacity:0;animation:recapIn .4s ease forwards}
@@ -178,6 +182,12 @@
       font-size:12px;color:var(--muted);word-break:break-all;text-align:center;direction:ltr}
   .btn-row{display:flex;gap:8px;margin-top:8px}
   .btn-row .btn{flex:1;margin-top:0;text-align:center;font-size:15px;padding:13px 10px}
+  .teach-tip{
+    margin-top:10px;padding:12px 14px;border-radius:12px;
+    background:rgba(255,213,79,.08);border:1px solid rgba(255,213,79,.32);
+    color:var(--ink);font-size:14.5px;line-height:1.55;text-align:start;
+  }
+  .teach-tip b{color:var(--yellow)}
   .topic-bar-row{margin-top:10px}
   .topic-bar-head{display:flex;align-items:center;gap:8px;margin-bottom:5px}
   .topic-bar-icon{width:20px;height:20px;flex-shrink:0}
@@ -377,6 +387,8 @@ const STATIONS = [
   {
     id:'pass', title:'עולם הסיסמאות', icon:'lock', color:'var(--cyan)',
     badgeName:'מומחה/ית סיסמאות',
+    takeaway:'סיסמה טובה היא ארוכה ומעורבבת — ולא מספרת שום דבר עלייך. ואת/ה לא משתף/ת אותה, גם לא עם החבר/ה הכי טוב/ה.',
+    teachTip:'לבנות יחד סיסמה חזקה על הלוח, ולדבר על למה לא משתפים אותה גם עם חברים קרובים.',
     challenges:[
       { type:'quiz',
         text:'איזו סיסמה הכי חזקה?',
@@ -418,6 +430,8 @@ const STATIONS = [
   {
     id:'strangers', title:'עולם הזרים', icon:'stranger', color:'var(--purple)',
     badgeName:'שומר/ת מפני זרים',
+    takeaway:'מי שהכרת רק ברשת הוא זר — גם אם הוא נחמד, וגם אחרי חודשים. פרטים אישיים או פגישה: רק דרך מבוגר/ת שסומכים עליו/ה.',
+    teachTip:'להדגיש שזר ברשת נשאר זר גם אחרי חודשי שיחה — ולתרגל למי פונים כשמישהו מבקש להיפגש.',
     challenges:[
       { type:'quiz',
         text:'במשחק מקוון מישהו שאתה לא מכיר כותב: "אתה משחק מדהים! איך קוראים לך ובאיזו עיר אתה גר?"',
@@ -456,6 +470,8 @@ const STATIONS = [
   {
     id:'info', title:'עולם המידע האישי', icon:'shield', color:'var(--green)',
     badgeName:'שומר/ת הפרטיות',
+    takeaway:'כתובת, בית ספר, טלפון ומיקום לא עולים לרשת. ומה שכבר עלה — נשאר שם גם אחרי שמוחקים.',
+    teachTip:'לעבור על מה מזהה אתכם בלי ששמתם לב: מדים בתמונה, שלט רחוב ברקע, שם בית הספר בפרופיל.',
     challenges:[
       { type:'sort',
         text:'גרור ומיין: מה מותר לשתף בפרופיל ציבורי?',
@@ -498,6 +514,8 @@ const STATIONS = [
   {
     id:'bully', title:'עולם הבריונות', icon:'chat', color:'var(--pink)',
     badgeName:'חבר/ה אמיץ/ה',
+    takeaway:'לא מגיבים בכעס, מצלמים מסך, ומספרים למבוגר/ת. לספר זה לא הלשנה — זה מה שעוצר את זה.',
+    teachTip:'לחזק שצילום מסך ופנייה למבוגר אינם «הלשנה» — זו הנקודה שבה הכי הרבה ילדים נתקעים.',
     challenges:[
       { type:'quiz',
         text:'ילד מהכיתה כתב תגובה פוגענית מתחת לתמונה שלך.',
@@ -541,6 +559,8 @@ const STATIONS = [
   {
     id:'links', title:'עולם ההודעות והקישורים המפוקפקים', icon:'phishing', color:'var(--yellow)',
     badgeName:'צייד/ת התרמיות',
+    takeaway:'הודעה שמלחיצה אותך למהר — עצור/י. בודקים את הכתובת עצמה, ולעולם לא מוסרים קוד אימות שהגיע אליכם.',
+    teachTip:'לתרגל קריאת כתובת אתר עד הסיומת האמיתית, ולהדגיש שלחץ זמן הוא סימן ההונאה מספר 1.',
     challenges:[
       { type:'quiz',
         text:'מגיעה הודעה: "מזל טוב! זכית באייפון! לחץ כאן לקבלת הפרס 🎁".',
@@ -589,6 +609,8 @@ const STATIONS = [
   {
     id:'social', title:'עולם הרשתות החברתיות', icon:'network', color:'var(--orange)',
     badgeName:'מגן/ת הרשתות',
+    takeaway:'הפרופיל סגור כברירת מחדל, ותיוגים מאשרים לפני שהם עולים. «ציבורי» אומר כולם — לא רק חברים.',
+    teachTip:'לפתוח יחד את הגדרות הפרטיות באפליקציה שהכיתה באמת משתמשת בה — הסבר תיאורטי לא מספיק כאן.',
     challenges:[
       { type:'quiz',
         text:'הפרופיל שלך ברשת חברתית פתוח לכולם, וזר מגיב לתמונה: "וואו, איפה זה? באיזה רחוב צילמת?"',
@@ -1382,6 +1404,11 @@ async function classResultsScreen(code){
       </div>
       <div class="topic-bar-track"><div class="topic-bar-fill" style="width:${t.pct}%;background:${t.color}"></div></div>
     </div>`;
+  // Turn the weakest topic into something the teacher can act on tomorrow morning.
+  const teachTip=(t)=>{
+    const st=STATIONS.find(x=>x.id===t.id);
+    return (st && st.teachTip) ? `<div class="teach-tip"><b>מומלץ לשיעור הבא:</b> ${escapeHtml(st.teachTip)}</div>` : '';
+  };
   const noDataRow=noData.length? `<p class="subtitle" style="margin-top:10px">עוד אין מספיק נתונים על: ${noData.map(t=>escapeHtml(t.title)).join(', ')}.</p>` : '';
   go(`
     <div class="card">
@@ -1401,6 +1428,7 @@ async function classResultsScreen(code){
       ${strongest.map(bar).join('')}
       ${weakest.length?`<div class="recap-title" style="margin-top:16px">🎯 הכי כדאי לחזק</div>`:''}
       ${weakest.map(bar).join('')}
+      ${weakest.map(teachTip).join('')}
       <div class="recap-title" style="margin-top:16px">🗺️ כל הנושאים</div>
       ${ranked.map(bar).join('')}
       ${noDataRow}`}
@@ -1762,7 +1790,8 @@ function awardCorrect(st,ch){
     if(!cur.practice && streak%STREAK_MILESTONE===0) bonus=STREAK_BONUS;
   }
   if(!cur.practice){ S.score+=pts+bonus; save(); updateHUD(); }
-  showFeedback(true, ch.explain, ()=>nextChallenge(st), pts, bonus, streak);
+  const note = cur.firstTry ? shortRecap(ch.explain) : ch.explain;
+  showFeedback(true, note, ()=>nextChallenge(st), pts, bonus, streak);
 }
 function showFeedback(good, text, onNext, pts, bonus, streakCount){
   document.querySelectorAll('.fb-overlay').forEach(el=>el.remove());  // guard against a stray duplicate modal
@@ -1788,14 +1817,13 @@ function nextChallenge(st){
 function stationFailed(st){
   const wasAdvanced=cur.advanced, wasReview=cur.review, si=cur.si;
   if(wasAdvanced){ delete S.advRound; save(); }
-  else if(!cur.practice && !wasReview){ S.partial[st.id]=0; save(); }
   haptic.failed();
   go(`<div class="card center" style="--c:${st.color}">
         <div style="font-size:64px;display:flex;justify-content:center;color:var(--bad);filter:drop-shadow(0 0 14px var(--bad))">${icon('crackedheart')}</div>
         <h2 style="color:var(--bad)">נגמרו החיים בתחנה זו</h2>
-        <p class="subtitle">זה בסדר גמור, ${escapeHtml(S.name)} — סוכנים לומדים מניסיון! ננסה את התחנה שוב מההתחלה.</p>
+        <p class="subtitle">זה בסדר גמור, ${escapeHtml(S.name)} — סוכנים לומדים מניסיון! נמשיך בדיוק מהשאלה שנעצרת בה.</p>
         <div class="chip" style="--c:${st.color};margin-top:12px">${icon(st.icon)} ${st.title}</div>
-        <button class="btn big" id="retryBtn">נסה/י את התחנה שוב 🔁</button>
+        <button class="btn big" id="retryBtn">ממשיכים 🔁</button>
         <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
       </div>`);
   $('#retryBtn').onclick=()=>{ sfx.click(); wasAdvanced?startAdvanced():wasReview?startReviewRound():startStation(si); };
@@ -1858,7 +1886,8 @@ function stationComplete(st){
   if(cur.hadMistake && !S.weakTopics.includes(st.id)) S.weakTopics.push(st.id);
   cur=null; save(); updateHUD(); sfx.badge(); haptic.badge(); burst(st.color);
   const allDone=S.done.length===STATIONS.length;
-  const recap = st.challenges.map((c,i)=>`<li style="animation-delay:${i*90}ms">✅ ${shortRecap(c.explain)}</li>`).join('');
+  // One thing to remember, not a re-run of every explanation in the world.
+  const takeaway = st.takeaway || shortRecap(st.challenges[0].explain);
   go(`<div class="card center" style="--c:${st.color}">
         <div class="badge-pop">${icon(st.icon)}</div>
         <h2 style="color:${st.color};margin-top:8px" class="neon">תג הושג!</h2>
@@ -1868,8 +1897,8 @@ function stationComplete(st){
           <div class="stat"><b>${S.score}</b><span>נקודות</span></div>
           <div class="stat"><b>${S.done.length}/${STATIONS.length}</b><span>תגים</span></div>
         </div>
-        <div class="recap-title">🎬 סיכום מהיר של התחנה</div>
-        <ul class="recap-list">${recap}</ul>
+        <div class="recap-title">💡 הדבר לזכור מהעולם הזה</div>
+        <p class="takeaway">${takeaway}</p>
         <button class="btn big" id="contBtn">${allDone?'🎖️ לתעודה הסופית':'המשך למפה ▶'}</button>
       </div>`);
   $('#contBtn').onclick=()=>{ sfx.click(); allDone?goToCertOrReview():mapScreen(); };
