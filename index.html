@@ -698,14 +698,16 @@ const SB_KEY='sb_publishable_FU3z8in7ZztjPvInBeG8Sg_nKOuwPjV';
 /* ---------- teacher identity (one personal code, nothing else) ----------
    A teacher's code IS their identity here: it ties classes to them and works from any device.
    The class list lives on the server keyed by that code, so a cleared browser or a new phone
-   loses nothing — type the code again and everything is back. It is 12 digits, not 6, because
-   a 6-digit secret is small enough to guess by brute force, and this one guards class rosters. */
+   loses nothing — type the code again and everything is back. Four digits, deliberately: no
+   function in this app can return a child's name to anyone, so what a guessed code reaches is
+   class names, PINs and head counts — and short codes are what make this usable in a lesson. */
 const TEACHER_KEY='cyberAgentsTeacherCode';
 function digitsOnly(s){ return (s||'').replace(/\D/g,''); }
-// Shown in groups of four so it can be read aloud and copied by hand. The server strips the
-// spaces before matching, so a teacher may type it either way.
+// Grouped in fours if it ever grows past four digits; at the current length this is a no-op.
+// The server strips spaces before matching, so a teacher may type it either way.
 function formatTeacherCode(c){ return digitsOnly(c).replace(/(\d{4})(?=\d)/g,'$1 '); }
-function maskTeacherCode(c){ const d=digitsOnly(c); return d ? '•••• •••• '+d.slice(-4) : ''; }
+// A four-digit code has nothing left to hide behind a partial mask, so hide all of it.
+function maskTeacherCode(c){ return digitsOnly(c) ? '••••' : ''; }
 function getTeacherCode(){ try{ return localStorage.getItem(TEACHER_KEY)||''; }catch(e){ return ''; } }
 function setTeacherCode(c){ try{ c ? localStorage.setItem(TEACHER_KEY, digitsOnly(c)) : localStorage.removeItem(TEACHER_KEY); }catch(e){} }
 function signedIn(){ return !!getTeacherCode(); }
@@ -738,10 +740,10 @@ async function sbFetch(path, opts={}){
 async function sbRpc(fn, params){
   return sbFetch(`rpc/${fn}`,{method:'POST', body:JSON.stringify(params)});
 }
-// Hands back a brand-new teacher code. This is the only moment it exists in the clear — the
-// server keeps just a hash of it, so it can never be looked up or recovered afterwards.
-async function createTeacherCode(){
-  return sbRpc('create_teacher', {});
+// Registers the four digits the teacher picked. Returns false when that code is already
+// somebody else's — a normal outcome to be shown, not a failure to be reported as one.
+async function createTeacherCode(code){
+  return sbRpc('create_teacher', {p_code:digitsOnly(code)});
 }
 async function createClass(name){
   const rows=await sbRpc('create_class', {p_name:(name||'').trim()||'כיתה ללא שם', p_teacher_code:getTeacherCode()});
@@ -1100,10 +1102,10 @@ function teacherLoginScreen(prefill){
       <h2 style="margin-top:6px" class="neon">כניסת מורה/ה</h2>
       <p class="subtitle">הקוד האישי שלך הוא כל מה שצריך — בלי מייל ובלי סיסמה. הוא מחזיק את כל הכיתות שלך, ועובד מכל מכשיר.</p>
       <label for="teacherCodeInput" class="name-label" style="margin-top:18px">קוד המורה שלך</label>
-      <input id="teacherCodeInput" maxlength="14" inputmode="numeric" pattern="[0-9 ]*" autocomplete="off"
-        placeholder="0000 0000 0000" value="${escapeHtml(formatTeacherCode(prefill||''))}"
+      <input id="teacherCodeInput" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
+        placeholder="0000" value="${escapeHtml(formatTeacherCode(prefill||''))}"
         style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;direction:ltr;
-        border:2px solid var(--cyan);color:var(--ink);font-size:21px;text-align:center;font-weight:900;letter-spacing:3px;
+        border:2px solid var(--cyan);color:var(--ink);font-size:26px;text-align:center;font-weight:900;letter-spacing:10px;
         font-variant-numeric:tabular-nums;box-shadow:0 0 14px -4px var(--cyan)" />
       <div id="loginErr" class="code-err" role="alert"></div>
       <button class="btn big" id="enterBtn">כניסה ▶</button>
@@ -1122,7 +1124,7 @@ function teacherLoginScreen(prefill){
   };
   btn.onclick=async()=>{
     const code=digitsOnly(inp.value);
-    if(code.length!==12) return fail('קוד המורה הוא 12 ספרות.');
+    if(code.length!==4) return fail('קוד המורה הוא 4 ספרות.');
     sfx.click(); btn.disabled=true; btn.textContent='נכנס…';
     // The only way to tell a real code from a wrong one is to ask the server, so the first
     // class-list fetch doubles as the check. Store it first; clear it again if it is rejected.
@@ -1136,35 +1138,65 @@ function teacherLoginScreen(prefill){
     sfx.badge(); teacherHubScreen();
   };
   inp.onkeydown=(e)=>{ if(e.key==='Enter') btn.click(); };
-  $('#newCodeBtn').onclick=async()=>{
-    sfx.click();
-    const b=$('#newCodeBtn'); b.disabled=true; b.textContent='יוצר קוד…';
-    let code=null;
-    try{ code=await createTeacherCode(); }
-    catch(e){
-      b.disabled=false; b.textContent='צור/י קוד מורה חדש';
-      return fail('לא הצלחנו ליצור קוד כרגע. נסו שוב.');
-    }
+  $('#newCodeBtn').onclick=()=>{ sfx.click(); teacherChooseCodeScreen(); };
+}
+// The teacher chooses their own four digits. A code they picked is a code they remember, which
+// matters more here than anywhere: nothing on the server can remind them of it later.
+function teacherChooseCodeScreen(){
+  go(`
+    <div class="card center" style="--c:var(--cyan)">
+      <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('shield')}</div>
+      <h2 style="margin-top:6px" class="neon">בחר/י קוד מורה</h2>
+      <p class="subtitle">ארבע ספרות לבחירתך. זה יהיה הקוד הקבוע שלך לכל הכיתות, מכל מכשיר — בחרו משהו שתזכרו.</p>
+      <label for="pickCodeInput" class="name-label" style="margin-top:18px">הקוד שאני בוחר/ת</label>
+      <input id="pickCodeInput" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
+        placeholder="0000"
+        style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;direction:ltr;
+        border:2px solid var(--cyan);color:var(--ink);font-size:26px;text-align:center;font-weight:900;letter-spacing:10px;
+        font-variant-numeric:tabular-nums;box-shadow:0 0 14px -4px var(--cyan)" />
+      <div id="pickErr" class="code-err" role="alert"></div>
+      <button class="btn big" id="makeBtn">זה הקוד שלי ▶</button>
+      <button class="btn ghost big" id="backLoginBtn" style="margin-top:10px">כבר יש לי קוד 🔙</button>
+      <div class="hint">אין שחזור לקוד. אם תשכחו אותו, הכיתות שנוצרו איתו לא ייפתחו שוב.</div>
+    </div>
+  `);
+  const inp=$('#pickCodeInput'), err=$('#pickErr'), btn=$('#makeBtn');
+  inp.focus();
+  inp.oninput=()=>{ inp.value=digitsOnly(inp.value); err.textContent=''; inp.style.borderColor='var(--cyan)'; };
+  const fail=(msg)=>{
+    err.textContent=msg; inp.style.borderColor='var(--bad)'; inp.focus(); inp.select();
+    btn.disabled=false; btn.textContent='זה הקוד שלי ▶';
+  };
+  btn.onclick=async()=>{
+    const code=digitsOnly(inp.value);
+    if(code.length!==4) return fail('צריך בדיוק 4 ספרות.');
+    sfx.click(); btn.disabled=true; btn.textContent='רושם…';
+    let ok=false;
+    try{ ok=await createTeacherCode(code); }
+    catch(e){ return fail('אין חיבור לשרת כרגע. נסו שוב בעוד רגע.'); }
+    if(!ok) return fail('הקוד הזה כבר תפוס. בחרו ארבע ספרות אחרות.');
     setTeacherCode(code);
     sfx.badge(); teacherNewCodeScreen(code);
   };
+  inp.onkeydown=(e)=>{ if(e.key==='Enter') btn.click(); };
+  $('#backLoginBtn').onclick=()=>{ sfx.click(); teacherLoginScreen(); };
 }
-// A code stored only as a hash cannot be mailed, reset, or recovered — if the teacher walks away
-// from this screen without keeping it, their classes are genuinely unreachable. So the screen does
-// one job only, and the way forward is deliberately a confirmation.
+// A code stored only as a hash cannot be mailed, reset, or recovered. The teacher chose these
+// digits, so this screen is a confirmation rather than a warning — but it still says the part
+// that matters and still asks them to acknowledge it.
 function teacherNewCodeScreen(code){
   go(`
     <div class="card center" style="--c:var(--cyan)">
       <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('check')}</div>
-      <h2 style="margin-top:6px" class="neon">זה הקוד שלך</h2>
-      <p class="subtitle">שמרו אותו עכשיו — בפתק, באנשי הקשר, איפה שנוח. <b>אי אפשר לשחזר אותו,</b> וכל הכיתות שלכם נפתחות רק איתו.</p>
+      <h2 style="margin-top:6px" class="neon">הקוד שלך מוכן</h2>
+      <p class="subtitle">מעכשיו נכנסים איתו מכל מכשיר. <b>אין שחזור לקוד</b> — כל הכיתות שתיצרו נפתחות רק דרכו.</p>
       <div style="margin:18px 0 6px;padding:16px;border-radius:16px;background:#0a1128;direction:ltr;
         border:2px solid var(--cyan);box-shadow:0 0 22px -6px var(--cyan)">
-        <div style="font-size:clamp(22px,7vw,30px);font-weight:900;letter-spacing:4px;color:var(--cyan);
+        <div style="font-size:clamp(34px,11vw,52px);font-weight:900;letter-spacing:12px;color:var(--cyan);
           font-variant-numeric:tabular-nums">${escapeHtml(formatTeacherCode(code))}</div>
       </div>
       <button class="btn ghost big" id="copyCodeBtn" style="margin-top:8px">📋 העתקת הקוד</button>
-      <button class="btn big" id="savedBtn" style="margin-top:12px">שמרתי — המשך ▶</button>
+      <button class="btn big" id="savedBtn" style="margin-top:12px">אזכור אותו — המשך ▶</button>
     </div>
   `);
   $('#copyCodeBtn').onclick=()=>{ sfx.click(); copyText(formatTeacherCode(code), $('#copyCodeBtn')); };
