@@ -294,6 +294,24 @@
   /* ---------- Sort mini-game ---------- */
   .sort-items{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0 6px;min-height:44px;
               border-radius:16px;transition:outline-color .12s,background .12s}
+  .rapid-count{
+    margin-top:14px;text-align:center;font-size:13px;font-weight:700;
+    letter-spacing:.1em;color:var(--muted);font-variant-numeric:tabular-nums;
+  }
+  .rapid-card{
+    margin:10px auto 0;max-width:30ch;min-height:104px;
+    display:flex;align-items:center;justify-content:center;
+    padding:18px 20px;border-radius:18px;
+    background:#0a1128;border:2px solid var(--c);
+    color:var(--ink);font-size:17px;font-weight:700;line-height:1.5;text-align:center;
+    box-shadow:0 0 22px -8px var(--c);
+  }
+  .rapid-btns{display:flex;gap:10px;margin-top:18px}
+  .rapid-btn{flex:1;font-size:17px;padding:15px 10px}
+  .rapid-btn.ok{background:linear-gradient(180deg,var(--good),#00a352);
+    box-shadow:0 8px 0 #01663a,0 10px 24px rgba(0,230,118,.3)}
+  .rapid-btn.bad{background:linear-gradient(180deg,var(--bad),#c9314c);
+    box-shadow:0 8px 0 #7d1f30,0 10px 24px rgba(255,77,109,.3)}
   .sort-instr{color:var(--muted);font-size:13px;text-align:center;margin-bottom:6px}
   .item{padding:11px 15px;border-radius:14px;background:#0e1738;border:2px solid var(--line);
         font-weight:800;font-size:15px;transition:transform .08s,opacity .12s;touch-action:none;cursor:grab}
@@ -443,6 +461,17 @@ const STATIONS = [
         prompt:'מה תעשה?',
         options:['אענה, הוא נחמד','אתן רק את השם','לא משתף פרטים אישיים עם זרים — ואפשר פשוט לא לענות'], answer:2,
         explain:'אנשים ברשת יכולים להעמיד פנים שהם מישהו אחר. פרטים כמו שם מלא ועיר עוזרים לזר למצוא אותך במציאות. מותר להגיד "לא".' },
+      { type:'rapid',
+        text:'מהר! מול מישהו שהכרת רק ברשת — מה בסדר ומה לא?',
+        cards:[
+          { t:'הוא שואל באיזה בית ספר את/ה לומד/ת', ok:false, why:'שם בית הספר מאפשר למצוא אותך במציאות. זה לא פרט שמוסרים.' },
+          { t:'משחקים יחד ומדברים על המשחק עצמו', ok:true, why:'לדבר על המשחק זה בדיוק מה שאמור לקרות שם.' },
+          { t:'הוא מבקש שתשלח/י לו תמונה שלך', ok:false, why:'תמונה שלך בידיים של מישהו שאינך מכיר/ה — אין דרך לקחת אותה בחזרה.' },
+          { t:'הוא מציע שתיפגשו לבד, בלי לספר לאף אחד', ok:false, why:'"בלי לספר לאף אחד" הוא הסימן הכי חזק שמשהו לא בסדר.' },
+          { t:'סיפרת לו שאת/ה אוהב/ת כדורסל', ok:true, why:'תחביבים הם לא פרט מזהה — אפשר לדבר עליהם בחופשיות.' },
+          { t:'הוא מבקש את מספר הטלפון שלך', ok:false, why:'מספר טלפון פותח דרך ישירה אליך, גם מחוץ למשחק.' }
+        ],
+        explain:'עם מישהו שהכרת רק ברשת אפשר לדבר על תחביבים ומשחקים — אבל לא למסור פרטים שמאפשרים למצוא אותך, ולא להיפגש בלי מבוגר/ת שיודע/ת.' },
       { type:'quiz',
         text:'מישהו שהכרת רק באינטרנט מציע להיפגש פנים-אל-פנים או בשיחת וידאו.',
         prompt:'מה תעשה?',
@@ -527,6 +556,17 @@ const STATIONS = [
         prompt:'מה הכי נכון לעשות?',
         options:['להגיב לו משהו מרושע בחזרה','למחוק את החשבון','לא להגיב, לצלם מסך כהוכחה, ולספר למבוגר שאני סומך עליו'], answer:2,
         explain:'תגובה מרושעת בחזרה רק מסלימה. שמירת הוכחה (צילום מסך) וסיפור למבוגר הם הדרך החזקה והבטוחה להתמודד.' },
+      { type:'rapid',
+        text:'מהר! מציקים לך או למישהו אחר — מה עוזר ומה רק מחמיר?',
+        cards:[
+          { t:'לצלם מסך של ההודעה הפוגענית', ok:true, why:'צילום מסך הוא ההוכחה. בלעדיו קשה להראות מה קרה.' },
+          { t:'להגיב חזרה בקללה', ok:false, why:'תגובה בכעס הופכת אותך לחלק מהריב, ומקשה להראות מי התחיל.' },
+          { t:'לספר למבוגר/ת שסומכים עליו/ה', ok:true, why:'זה מה שבאמת עוצר את זה. לספר זה לא הלשנה.' },
+          { t:'להצטרף לקבוצה שנפתחה כדי לצחוק על מישהו', ok:false, why:'להצטרף זה להיות חלק מזה, גם אם לא כתבת כלום.' },
+          { t:'לחסום את מי שמציק', ok:true, why:'חסימה עוצרת את הזרם ונותנת לך שקט לחשוב.' },
+          { t:'לשתוק ולא לספר לאף אחד', ok:false, why:'אפשר לא להגיב — אבל לא לספר משאיר אותך לבד מול זה.' }
+        ],
+        explain:'מול הצקות: לא מגיבים בכעס, מצלמים מסך, חוסמים, ומספרים למבוגר/ת. השתיקה היא הדבר היחיד שעוזר למי שמציק.' },
       { type:'quiz',
         text:'בקבוצה אתה רואה שילד אחר סופג הצקות מכולם.',
         prompt:'מה תעשה?',
@@ -572,6 +612,17 @@ const STATIONS = [
         prompt:'מה תעשה?',
         options:['אלחץ, אולי באמת זכיתי','אלחץ רק כדי לבדוק','לא לוחץ — הודעות "זכית!" הן כמעט תמיד תרמית'], answer:2,
         explain:'אף אחד לא מחלק פרסים יקרים בהודעה אקראית. קישורים כאלה מנסים לגנוב מידע. לא לוחצים, ומראים להורה.' },
+      { type:'rapid',
+        text:'מהר! ההודעה הזו — בסדר או חשודה?',
+        cards:[
+          { t:'"זכית בפרס! לחץ/י כאן ב-10 הדקות הקרובות"', ok:false, why:'פרס שלא נרשמת אליו, ועוד עם שעון — זו הונאה קלאסית.' },
+          { t:'סרטון ששלח/ה חבר/ה אחרי שביקשת ממנו/ה', ok:true, why:'ביקשת, ידעת שזה מגיע, ואת/ה מכיר/ה את השולח/ת.' },
+          { t:'"שלח/י לנו את קוד האימות שקיבלת ב-SMS"', ok:false, why:'קוד אימות לא נמסר לאף אחד. אף גוף אמיתי לא יבקש אותו.' },
+          { t:'קישור לכתובת bank.co.il.verify-now.ru', ok:false, why:'הכתובת האמיתית נגמרת ב-co.il. כל מה שממשיך אחריו הוא אתר אחר.' },
+          { t:'עדכון שמופיע בתוך האפליקציה עצמה', ok:true, why:'בתוך האפליקציה הרשמית — זה הערוץ הבטוח.' },
+          { t:'"החשבון שלך ייחסם היום אם לא תאמת/י"', ok:false, why:'לחץ זמן הוא הכלי מספר 1 של הונאות. הוא נועד למנוע ממך לחשוב.' }
+        ],
+        explain:'הודעה שמלחיצה למהר, מבטיחה פרס, או מבקשת קוד אימות — עוצרים. בודקים את הכתובת עצמה, ופועלים רק דרך האפליקציה הרשמית.' },
       { type:'quiz',
         text:'מגיעה הודעה: "לחץ כאן כדי לאמת את הסיסמה שלך, אחרת החשבון ייחסם."',
         prompt:'מה תעשה?',
@@ -622,6 +673,17 @@ const STATIONS = [
         prompt:'מה הכי נכון?',
         options:['לענות, זה סתם רחוב','לענות לו בפרטי','לא לשתף מיקום — ולשקול להפוך את הפרופיל לפרטי'], answer:2,
         explain:'מיקום מדויק מאפשר לזרים למצוא אותך במציאות. פרופיל פרטי ואי-שיתוף מיקום שומרים עליך. אתה בוחר מי רואה אותך.' },
+      { type:'rapid',
+        text:'מהר! ההגדרה או הפעולה הזו ברשת חברתית — בסדר או לא?',
+        cards:[
+          { t:'הפרופיל שלך פתוח לכל מי שמחפש', ok:false, why:'"ציבורי" אומר כולם, לא רק חברים. זו לא ברירת המחדל שרוצים.' },
+          { t:'תיוגים מחכים לאישור שלך לפני שהם עולים', ok:true, why:'ככה אף אחד לא מחליט בשבילך מה מופיע בפרופיל שלך.' },
+          { t:'תמונה שבה נראה שם בית הספר על החולצה', ok:false, why:'זה מזהה אתכם בלי ששמתם לב — בדיוק כמו לכתוב את הכתובת.' },
+          { t:'לאשר בקשת חברות ממישהו שאינך מכיר/ה', ok:false, why:'הוא מקבל גישה לכל מה שחשבת שרק חברים רואים.' },
+          { t:'לשתף פוסט של חבר/ה, אחרי שאישר/ה', ok:true, why:'שאלת קודם — זה בדיוק הדבר הנכון.' },
+          { t:'שיתוף מיקום חי בסטורי', ok:false, why:'מיקום בזמן אמת מספר לכולם איפה את/ה ממש עכשיו.' }
+        ],
+        explain:'ברשת חברתית: פרופיל סגור, אישור תיוגים, בלי מיקום חי, ובלי לאשר אנשים שאינכם מכירים. ומה שנראה ברקע של תמונה מזהה אתכם לא פחות משם.' },
       { type:'quiz',
         text:'אתה עומד להעלות סטורי עם שיתוף מיקום חי מהמסיבה — כדי שכולם יראו איפה אתה עכשיו.',
         prompt:'מה כדאי?',
@@ -1643,6 +1705,7 @@ function renderChallenge(){
       <div class="dots">${dots}</div>
     </div>`;
   if(ch.type==='quiz') renderQuiz(st,ch,head);
+  else if(ch.type==='rapid') renderRapid(st,ch,head);
   else renderSort(st,ch,head);
   $('#toMapBtn').onclick=()=>{ sfx.click(); mapScreen(); };
   $('#resetStageBtn').onclick=()=>{
@@ -1688,6 +1751,48 @@ function answerQuiz(pos, st, ch, order){
 }
 
 /* ----- Sort mini-game (tap to place — works with touch & mouse) ----- */
+/* ----- Rapid round -----
+   A handful of one-tap calls after a run of scenario questions. Its job is pace rather than
+   new material: same topic, a completely different motion, which is what pulls a child's
+   attention back before it drifts. The whole round counts as one challenge — a wrong tap costs
+   a life and explains itself, exactly like a wrong answer anywhere else, and the round carries
+   on rather than restarting. */
+function renderRapid(st,ch,head){
+  const cards=shuffle(ch.cards.slice());
+  // Taps keep landing while the feedback modal is up and after the last card is answered —
+  // a double-tap on the final card is enough. Both are ignored rather than read past the end.
+  let i=0, locked=false;
+  go(`<div class="card" style="--c:${st.color}">
+        ${head}
+        <div class="scenario">${ch.text}</div>
+        <div id="rapidStage"></div>
+        <div class="rapid-btns">
+          <button class="btn rapid-btn ok" id="rOk">✅ ${ch.okLabel||'בסדר'}</button>
+          <button class="btn rapid-btn bad" id="rBad">🚫 ${ch.badLabel||'לא בסדר'}</button>
+        </div>
+      </div>`);
+  const stage=$('#rapidStage');
+  const paint=()=>{
+    stage.innerHTML=`<div class="rapid-count">${i+1} / ${cards.length}</div>
+                     <div class="rapid-card">${cards[i].t}</div>`;
+  };
+  const advance=()=>{ i++; if(i>=cards.length) awardCorrect(st,ch); else paint(); };
+  const answer=(said)=>{
+    if(locked || i>=cards.length) return;
+    const card=cards[i];
+    if(said===card.ok){ sfx.click(); advance(); return; }
+    locked=true;
+    cur.lives--; cur.firstTry=false; cur.hadMistake=true; noteMistake(st); streak=0;
+    sfx.wrong(); haptic.wrong(); updateHUD();
+    showFeedback(false, card.why||ch.explain, ()=>{
+      locked=false;
+      if(cur.lives<=0) stationFailed(st); else advance();
+    });
+  };
+  $('#rOk').onclick=()=>answer(true);
+  $('#rBad').onclick=()=>answer(false);
+  paint();
+}
 function renderSort(st,ch,head){
   // shuffle a working copy
   const items=ch.items.map((it,idx)=>({...it,idx,placed:null}));
