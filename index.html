@@ -294,6 +294,28 @@
   /* ---------- Sort mini-game ---------- */
   .sort-items{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0 6px;min-height:44px;
               border-radius:16px;transition:outline-color .12s,background .12s}
+  .chat-window{
+    margin:14px auto 0;max-width:34ch;max-height:46vh;overflow-y:auto;
+    background:#0a1128;border:2px solid var(--c);border-radius:18px;
+    padding:14px;display:flex;flex-direction:column;gap:9px;
+    box-shadow:0 0 24px -10px var(--c);
+  }
+  .chat-msg{
+    max-width:85%;padding:10px 13px;border-radius:16px;
+    font-size:15px;line-height:1.5;text-align:start;
+    animation:chatIn .22s ease-out;
+  }
+  .chat-msg.them{
+    align-self:flex-start;background:rgba(120,150,220,.16);
+    color:var(--ink);border-end-start-radius:5px;
+  }
+  .chat-msg.me{
+    align-self:flex-end;background:color-mix(in srgb, var(--c) 26%, #0a1128);
+    color:var(--ink);border-end-end-radius:5px;
+  }
+  @keyframes chatIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .chat-opts{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+  .chat-opt{font-size:15px;padding:13px 16px;text-align:start;line-height:1.45}
   .spot-hint{margin-top:12px;text-align:center;font-size:14px;color:var(--muted)}
   .spot-hint b{color:var(--ink)}
   .spot-frame{
@@ -504,6 +526,38 @@ const STATIONS = [
         prompt:'מה תעשה?',
         options:['אענה, הוא נחמד','אתן רק את השם','לא משתף פרטים אישיים עם זרים — ואפשר פשוט לא לענות'], answer:2,
         explain:'אנשים ברשת יכולים להעמיד פנים שהם מישהו אחר. פרטים כמו שם מלא ועיר עוזרים לזר למצוא אותך במציאות. מותר להגיד "לא".' },
+      { type:'chat',
+        text:'את/ה משחק/ת אונליין. מישהו שלא פגשת מעולם מתחיל לכתוב לך. מה עונים?',
+        turns:[
+          { msg:'היי! ראיתי שאת/ה ממש טוב/ה במשחק 🙂 בן/בת כמה את/ה?',
+            options:[
+              { t:'בן/בת 11, ואתה?', good:false,
+                reply:'מגניב, גם אני! ובאיזו עיר את/ה גר/ה?',
+                why:'הגיל לבד נראה תמים — אבל זו הפתיחה. כל תשובה מזמינה שאלה אישית קצת יותר.' },
+              { t:'זה לא ממש משנה. בוא נמשיך לשחק', good:true,
+                reply:'סבבה 😅 יאללה עוד סיבוב',
+                why:'החזרת את השיחה למשחק בלי לריב ובלי למסור כלום. בדיוק המהלך.' }
+            ] },
+          { msg:'יש לי סקין נדיר שאני יכול לתת לך. רק תשלח/י סלפי שאדע שזה באמת את/ה',
+            options:[
+              { t:'אוקיי, שולח/ת', good:false,
+                reply:'יפה. עכשיו תשלח/י עוד אחת, אחרת אני מפיץ את הראשונה לכולם.',
+                why:'ככה זה עובד תמיד: התמונה הראשונה הופכת מיד לכלי לחץ לתמונה הבאה.' },
+              { t:'רגע, למה צריך תמונה בשביל סקין?', good:true,
+                reply:'נו טוב, עזוב.',
+                why:'שאלת "למה". בקשה שאין לה סיבה הגיונית — חוסר ההיגיון הוא בדיוק הסימן.' }
+            ] },
+          { msg:'ואל תספר/י לאף אחד על השיחה בינינו, זה הסוד שלנו 🤫',
+            options:[
+              { t:'בסדר, לא אספר', good:false,
+                reply:'מעולה. אז ניפגש מחר אחרי בית הספר, רק שנינו.',
+                why:'ברגע שהסכמת לשמור סוד ממבוגרים — נשארת לבד מולו. זה בדיוק מה שהוא רצה.' },
+              { t:'דווקא כן אספר להורים שלי', good:true,
+                reply:'(המשתמש עזב את הצ׳אט)',
+                why:'"זה הסוד שלנו" הוא המשפט שאחריו מספרים למבוגר/ת. תמיד.' }
+            ] }
+        ],
+        explain:'אף אחד לא מבקש הכול בהודעה הראשונה. זה מתגלגל: גיל, עיר, תמונה, סוד, פגישה. אפשר לעצור את זה בכל שלב — והכי קל בשלב הראשון.' },
       { type:'rapid',
         text:'מהר! מול מישהו שהכרת רק ברשת — מה בסדר ומה לא?',
         cards:[
@@ -621,6 +675,38 @@ const STATIONS = [
           { t:'לשתוק ולא לספר לאף אחד', ok:false, why:'אפשר לא להגיב — אבל לא לספר משאיר אותך לבד מול זה.' }
         ],
         explain:'מול הצקות: לא מגיבים בכעס, מצלמים מסך, חוסמים, ומספרים למבוגר/ת. השתיקה היא הדבר היחיד שעוזר למי שמציק.' },
+      { type:'chat',
+        text:'בקבוצת הכיתה מתחיל משהו לא נעים. מה את/ה כותב/ת?',
+        turns:[
+          { msg:'תראו את התמונה של דניאל מהטיול 😂😂 איזה לוזר',
+            options:[
+              { t:'חחח נכון', good:false,
+                reply:'סבבה, בוא נעשה מזה סטיקר לכל הכיתה',
+                why:'צחוק אחד הפך את זה לקבוצתי. גם אם לא התחלת — עכשיו את/ה חלק מזה.' },
+              { t:'זה לא מצחיק. תורידו את זה', good:true,
+                reply:'אוף, סתם צחקנו... טוב, מוחק.',
+                why:'משפט אחד עוצר יותר משנדמה. רוב הקבוצה מחכה שמישהו יגיד אותו ראשון.' }
+            ] },
+          { msg:'(דניאל כותב לך בפרטי) ראית מה כתבו עליי שם?',
+            options:[
+              { t:'עזוב אותם, הם סתם טיפשים', good:false,
+                reply:'כן... כאילו, לא נעים לי לבוא לבית ספר מחר.',
+                why:'"עזוב" נשמע תומך, אבל הוא משאיר אותו לבד עם זה ובלי שום צעד קדימה.' },
+              { t:'כן, וזה מגעיל. צילמתי מסך למקרה שנצטרך', good:true,
+                reply:'וואו, תודה. חשבתי שאף אחד לא שם לב.',
+                why:'הכרת במה שקרה ושמרת הוכחה. שני הדברים שעוזרים בפועל.' }
+            ] },
+          { msg:'רק אל תספר/י למורה, יהיה לי הרבה יותר גרוע',
+            options:[
+              { t:'אוקיי, לא אספר', good:false,
+                reply:'תודה... (למחרת התמונה כבר עברה לשתי כיתות)',
+                why:'הפחד מובן, אבל שתיקה לא עוצרת את זה — היא רק נותנת לזה זמן להתפשט.' },
+              { t:'אני איתך, אבל צריך לספר למבוגר/ת. בוא נלך ביחד', good:true,
+                reply:'טוב... אם את/ה בא/ה איתי, אני מוכן.',
+                why:'לא במקומו ולא מאחורי הגב — יחד. ככה זה נעצר בלי שהוא ירגיש שהסגירו אותו.' }
+            ] }
+        ],
+        explain:'מול בריונות יש שלושה צעדים: להגיד שזה לא מצחיק, לשמור צילום מסך, וללכת עם הנפגע/ת למבוגר/ת. שתיקה היא הדבר היחיד שעוזר למי שמציק.' },
       { type:'quiz',
         text:'בקבוצה אתה רואה שילד אחר סופג הצקות מכולם.',
         prompt:'מה תעשה?',
@@ -1783,6 +1869,7 @@ function renderChallenge(){
   if(ch.type==='quiz') renderQuiz(st,ch,head);
   else if(ch.type==='rapid') renderRapid(st,ch,head);
   else if(ch.type==='spot') renderSpot(st,ch,head);
+  else if(ch.type==='chat') renderChat(st,ch,head);
   else renderSort(st,ch,head);
   $('#toMapBtn').onclick=()=>{ sfx.click(); mapScreen(); };
   $('#resetStageBtn').onclick=()=>{
@@ -1828,6 +1915,60 @@ function answerQuiz(pos, st, ch, order){
 }
 
 /* ----- Sort mini-game (tap to place — works with touch & mouse) ----- */
+/* ----- Rolling conversation -----
+   A single question can only ask what is right in the abstract. The situations that actually
+   hurt children unfold over several messages, where each answer decides what arrives next —
+   which is why a wrong choice here does not simply say "wrong": it plays out, and the child
+   reads what the other side does with what they just gave away. Then the turn is offered again,
+   with that consequence already seen. */
+function renderChat(st,ch,head){
+  let turn=0, locked=false;
+  const log=[];
+  go(`<div class="card" style="--c:${st.color}">
+        ${head}
+        <div class="scenario">${ch.text}</div>
+        <div class="chat-window" id="chatWin"></div>
+        <div class="chat-opts" id="chatOpts"></div>
+      </div>`);
+  const win=$('#chatWin'), opts=$('#chatOpts');
+  const paint=()=>{
+    win.innerHTML=log.map(m=>`<div class="chat-msg ${m.side}">${m.t}</div>`).join('');
+    win.scrollTop=win.scrollHeight;
+    opts.innerHTML=locked ? '' :
+      ch.turns[turn].options.map((o,i)=>`<button class="btn ghost chat-opt" data-i="${i}">${o.t}</button>`).join('');
+    opts.querySelectorAll('.chat-opt').forEach(b=> b.onclick=()=>choose(+b.dataset.i));
+  };
+  const enterTurn=()=>{ log.push({side:'them', t:ch.turns[turn].msg}); paint(); };
+  const choose=(i)=>{
+    if(locked) return;
+    const o=ch.turns[turn].options[i];
+    locked=true;
+    log.push({side:'me', t:o.t});
+    if(o.reply) log.push({side:'them', t:o.reply});
+    paint();
+    if(o.good){
+      sfx.click();
+      setTimeout(()=>{
+        turn++;
+        if(turn>=ch.turns.length){ awardCorrect(st,ch); return; }
+        locked=false;
+        enterTurn();
+      }, 750);
+      return;
+    }
+    cur.lives--; cur.firstTry=false; cur.hadMistake=true; noteMistake(st); streak=0;
+    sfx.wrong(); haptic.wrong(); updateHUD();
+    showFeedback(false, o.why||ch.explain, ()=>{
+      if(cur.lives<=0){ stationFailed(st); return; }
+      // Roll the exchange back and offer the same turn again — the consequence has been seen.
+      if(o.reply) log.pop();
+      log.pop();
+      locked=false; paint();
+    });
+  };
+  enterTurn();
+}
+
 /* ----- Spot the problem -----
    Every other challenge here hands the child a list and asks which item is right. Real life
    never does that: nothing is labelled, no one announces that a decision is due, and the whole
