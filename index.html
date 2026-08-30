@@ -163,6 +163,11 @@
   .myclass-del{flex-shrink:0;background:none;color:var(--muted);font-size:18px;padding:6px 10px;
       min-height:44px;min-width:44px;border-radius:10px}
   .recap-title{margin-top:18px;font-weight:900;font-size:14px;color:var(--yellow)}
+  .fast-note{
+    margin:10px auto 0;max-width:32ch;padding:7px 13px;border-radius:999px;
+    background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.35);
+    color:var(--green);font-size:13.5px;font-weight:700;
+  }
   .takeaway{
     margin:8px auto 0;max-width:34ch;font-size:16px;font-weight:700;line-height:1.55;
     color:var(--ink);text-wrap:balance;
@@ -848,7 +853,7 @@ function icon(key){
   return `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 }
 
-let S = { name:'', score:0, done:[], muted:false, partial:{}, weakTopics:[], reviewDone:false };
+let S = { name:'', score:0, done:[], muted:false, partial:{}, weakTopics:[], reviewDone:false, missed:{} };
 let cur = null; // {si, ci, lives, firstTry}
 
 const $ = s=>document.querySelector(s);
@@ -860,13 +865,19 @@ function load(){
   try{ const d=JSON.parse(localStorage.getItem(SAVE_KEY)); if(d){S=Object.assign(S,d);} }catch(e){}
   if(!S.partial||typeof S.partial!=='object') S.partial={};
   if(!Array.isArray(S.weakTopics)) S.weakTopics=[];
+  if(!S.missed || typeof S.missed!=='object' || Array.isArray(S.missed)) S.missed={};
   if(!S.deviceId){ try{ S.deviceId=crypto.randomUUID(); }catch(e){ S.deviceId='d'+Date.now()+Math.random().toString(36).slice(2); } }
 }
 function save(){
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays,onboarded:S.onboarded,weakTopics:S.weakTopics,reviewDone:S.reviewDone,deviceId:S.deviceId,classId:S.classId,classCode:S.classCode,className:S.className,classAsked:S.classAsked,classSkippedOffline:S.classSkippedOffline})); }catch(e){}
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays,onboarded:S.onboarded,weakTopics:S.weakTopics,reviewDone:S.reviewDone,deviceId:S.deviceId,classId:S.classId,classCode:S.classCode,className:S.className,classAsked:S.classAsked,classSkippedOffline:S.classSkippedOffline,
+    missed:S.missed,returnDoneAt:S.returnDoneAt,lastPlayedAt:Date.now()})); }catch(e){}
   if(S.classCode) syncStudentProgress();
 }
 load();
+// How long the child was away, measured once at startup — before this session's first save
+// overwrites the mark. The whole return visit hangs on this number.
+const sessionGapMs = S.lastPlayedAt ? (Date.now()-S.lastPlayedAt) : 0;
+let returnRoundDoneNow = false;
 
 /* ---------- sound (Web Audio: soft, warm, generated) ---------- */
 let actx=null, master=null;
@@ -1485,6 +1496,7 @@ function mapScreen(){
       <p class="subtitle">${allDone?('כל הכבוד, '+escapeHtml(S.name)+'! סיימת את כל התחנות 🎖️'):'עבור/י תחנה־תחנה והפוך/הפכי לסוכן/ת מוסמך/ת'}</p>
     </div>
     <div class="map">${nodes}</div>
+    ${returnDue()?`<button class="btn adv-btn big" id="returnRoundBtn" style="margin-top:14px">🔁 משימת חוזר — ${returnRoundSize()} שאלות קצרות</button>`:''}
     ${allDone? `<button class="btn big" id="certBtn">${pendingReview?'📝 סבב חיזוק קצר לפני התעודה':'🎖️ לתעודת הסוכן/ת'}</button>
     <button class="btn adv-btn big" id="advBtn" style="margin-top:10px">${advLabel}</button>
     ${advOn?`<button class="btn ghost" id="advNewBtn" style="margin-top:8px">🔄 התחל סבב חדש במקום זה</button>`:''}`:''}
@@ -1494,6 +1506,7 @@ function mapScreen(){
   document.querySelectorAll('.station.clickable').forEach(el=>{
     el.onclick=()=>{ sfx.click(); startStation(+el.dataset.i); };
   });
+  const rrb=$('#returnRoundBtn'); if(rrb) rrb.onclick=()=>{ sfx.click(); returnIntroScreen(); };
   const cb=$('#certBtn'); if(cb) cb.onclick=()=>{ sfx.click(); goToCertOrReview(); };
   const ab=$('#advBtn'); if(ab) ab.onclick=()=>{ sfx.click(); openAdvanced(); };
   const anb=$('#advNewBtn'); if(anb) anb.onclick=()=>{ if(confirm('להתחיל סבב אתגר מתקדם חדש? הסבב הנוכחי בתהליך יימחק.')){ sfx.click(); startAdvanced(); } };
@@ -1511,9 +1524,30 @@ let practiceStation=null;     // holds a shuffled-pool variant of a station whil
 let reviewStation=null;       // holds the virtual "weak-topic review round" station object while active
 function curStation(){
   if(cur && cur.advanced) return advStation;
-  if(cur && cur.review) return reviewStation;
+  if(cur && (cur.review || cur.returnRound)) return reviewStation;
   if(cur && cur.practice && practiceStation) return practiceStation;
   return cur ? STATIONS[cur.si] : null;
+}
+/* ----- Adaptive world length -----
+   A world proves itself in its first two questions. A child who clears both without a mistake
+   has shown they know the topic, and asking three more of the same is just time taken from
+   them. The moment they slip, the world opens to its full length — those extra questions were
+   written for exactly this child. Nothing is dropped: whatever gets skipped seeds the return
+   visit, so it comes back later, spaced, when it is worth more. */
+const CORE_CHALLENGES = 2;
+function worldLength(st){
+  if(!cur || cur.practice || cur.review || cur.advanced || cur.returnRound) return st.challenges.length;
+  return cur.expanded ? st.challenges.length : Math.min(CORE_CHALLENGES, st.challenges.length);
+}
+// A wrong answer does two things beyond costing a life: it opens the rest of the world, and it
+// records which question was missed, so the return visit can come back to that exact one.
+function noteMistake(st){
+  if(!cur) return;
+  cur.expanded=true;
+  if(cur.practice || cur.review || cur.advanced || cur.returnRound) return;
+  const list = S.missed[st.id] || (S.missed[st.id]=[]);
+  if(!list.includes(cur.ci)) list.push(cur.ci);
+  save();
 }
 function buildPracticeStation(st){
   // mix the original questions with the extra pool and take a fresh random subset each replay
@@ -1527,7 +1561,10 @@ function startStation(si){
   practiceStation = practice ? buildPracticeStation(st) : null;
   let resume = (!practice && S.partial[st.id]) ? S.partial[st.id] : 0;
   if(resume>=st.challenges.length) resume=0;
-  cur={si, ci:resume, lives:LIVES, firstTry:true, practice, hadMistake:false};
+  // Someone resuming past the core, or with a miss on record, has already earned the full world.
+  const missedHere = S.missed[st.id] || [];
+  cur={si, ci:resume, lives:LIVES, firstTry:true, practice, hadMistake:false,
+       expanded: resume>=CORE_CHALLENGES || missedHere.length>0};
   renderChallenge();
 }
 
@@ -1594,7 +1631,8 @@ function renderChallenge(){
   if(cur.advanced){ if(S.advRound){ S.advRound.ci=cur.ci; S.advRound.lives=cur.lives; save(); } }
   else if(!cur.practice && !cur.review){ S.partial[st.id]=cur.ci; save(); }  // remember where we are (resume support)
   updateHUD();
-  const dots=st.challenges.map((_,i)=>`<div class="dot ${i<cur.ci?'on':''} ${i===cur.ci?'cur on':''}" style="--c:${st.color}"></div>`).join('');
+  // Dots show the world as it currently stands: the short path, or the full one once it opened.
+  const dots=st.challenges.slice(0,worldLength(st)).map((_,i)=>`<div class="dot ${i<cur.ci?'on':''} ${i===cur.ci?'cur on':''}" style="--c:${st.color}"></div>`).join('');
   const head=`
     <div class="sticky-head">
       <div class="chal-top">
@@ -1640,7 +1678,7 @@ function answerQuiz(pos, st, ch, order){
     awardCorrect(st,ch);
   } else {
     const b=btns[pos]; b.classList.add('wrong');
-    cur.lives--; cur.firstTry=false; cur.hadMistake=true; streak=0; sfx.wrong(); haptic.wrong(); updateHUD();
+    cur.lives--; cur.firstTry=false; cur.hadMistake=true; noteMistake(st); streak=0; sfx.wrong(); haptic.wrong(); updateHUD();
     showFeedback(false, ch.explain, ()=>{
       b.classList.remove('wrong');
       if(cur.lives<=0){ stationFailed(st); }
@@ -1766,7 +1804,7 @@ function checkSort(st,ch){
     sfx.correct(); haptic.correct();
     awardCorrect(st,ch);
   } else {
-    cur.lives--; cur.firstTry=false; cur.hadMistake=true; streak=0; sfx.wrong(); haptic.wrong(); updateHUD();
+    cur.lives--; cur.firstTry=false; cur.hadMistake=true; noteMistake(st); streak=0; sfx.wrong(); haptic.wrong(); updateHUD();
     // No per-item reveal — teach the principle and let them rethink (their arrangement stays).
     const hint = ch.explain + ` <b>(עדיין ${wrong} לא במקום הנכון — חשוב/י איזה צד מתאים לכל פריט.)</b>`;
     showFeedback(false, hint, ()=>{ if(cur.lives<=0){ stationFailed(st); } else $('#checkBtn').disabled=false; });
@@ -1811,11 +1849,11 @@ function showFeedback(good, text, onNext, pts, bonus, streakCount){
 }
 function nextChallenge(st){
   cur.ci++;
-  if(cur.ci>=st.challenges.length) stationComplete(st);
+  if(cur.ci>=worldLength(st)) stationComplete(st);
   else renderChallenge();
 }
 function stationFailed(st){
-  const wasAdvanced=cur.advanced, wasReview=cur.review, si=cur.si;
+  const wasAdvanced=cur.advanced, wasReview=cur.review, wasReturn=cur.returnRound, si=cur.si;
   if(wasAdvanced){ delete S.advRound; save(); }
   haptic.failed();
   go(`<div class="card center" style="--c:${st.color}">
@@ -1826,10 +1864,23 @@ function stationFailed(st){
         <button class="btn big" id="retryBtn">ממשיכים 🔁</button>
         <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
       </div>`);
-  $('#retryBtn').onclick=()=>{ sfx.click(); wasAdvanced?startAdvanced():wasReview?startReviewRound():startStation(si); };
+  $('#retryBtn').onclick=()=>{ sfx.click(); wasAdvanced?startAdvanced():wasReturn?startReturnRound():wasReview?startReviewRound():startStation(si); };
   $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
 }
 function stationComplete(st){
+  if(cur.returnRound){
+    S.returnDoneAt=Date.now(); returnRoundDoneNow=true; save();
+    cur=null; updateHUD(); sfx.win(); haptic.badge(); burst('var(--purple)');
+    go(`<div class="card center" style="--c:var(--purple)">
+          <div class="badge-pop" style="color:var(--purple)">${icon('star')}</div>
+          <h2 style="color:var(--purple);margin-top:8px" class="neon">זכרת, ${escapeHtml(S.name)}!</h2>
+          <p class="subtitle">זה החלק שהכי קשה — לזכור את זה גם כמה ימים אחרי. בדיוק בשביל זה חזרנו. 💪</p>
+          <div class="stat-row"><div class="stat"><b>${S.score}</b><span>נקודות</span></div></div>
+          <button class="btn big" id="contBtn" style="margin-top:14px">חזרה למפה 🗺️</button>
+        </div>`);
+    $('#contBtn').onclick=()=>{ sfx.click(); mapScreen(); };
+    return;
+  }
   if(cur.review){                                            // weak-topic review round finished
     S.reviewDone=true; S.weakTopics=[]; save();
     cur=null; updateHUD(); sfx.win(); haptic.badge(); burst('var(--green)');
@@ -1884,6 +1935,7 @@ function stationComplete(st){
   if(!S.done.includes(st.id)){ S.done.push(st.id); }
   delete S.partial[st.id];
   if(cur.hadMistake && !S.weakTopics.includes(st.id)) S.weakTopics.push(st.id);
+  const fastPath = !cur.expanded && !cur.hadMistake;   // cleared the core without a slip
   cur=null; save(); updateHUD(); sfx.badge(); haptic.badge(); burst(st.color);
   const allDone=S.done.length===STATIONS.length;
   // One thing to remember, not a re-run of every explanation in the world.
@@ -1897,11 +1949,62 @@ function stationComplete(st){
           <div class="stat"><b>${S.score}</b><span>נקודות</span></div>
           <div class="stat"><b>${S.done.length}/${STATIONS.length}</b><span>תגים</span></div>
         </div>
+        ${fastPath?`<div class="fast-note">💨 בלי טעות אחת — דילגנו על שאר השאלות של העולם הזה</div>`:''}
         <div class="recap-title">💡 הדבר לזכור מהעולם הזה</div>
         <p class="takeaway">${takeaway}</p>
         <button class="btn big" id="contBtn">${allDone?'🎖️ לתעודה הסופית':'המשך למפה ▶'}</button>
       </div>`);
   $('#contBtn').onclick=()=>{ sfx.click(); allDone?goToCertOrReview():mapScreen(); };
+}
+
+/* ----- Return visit -----
+   Everything so far happens in one sitting, and one sitting fades. This brings back exactly the
+   material worth revisiting — the questions the child got wrong, and the ones the short path
+   never showed them — after enough days have passed for the spacing to do its work. */
+const RETURN_AFTER_MS = 2*24*60*60*1000;      // two days away is enough to make recall worth testing
+const RETURN_ROUND_LEN = 5;
+function returnPool(){
+  const out=[];
+  STATIONS.forEach(st=>{
+    if(!S.done.includes(st.id)) return;
+    const missed = S.missed[st.id] || [];
+    missed.forEach(i=>{ if(st.challenges[i]) out.push(st.challenges[i]); });
+    // whatever the short path never put in front of them
+    const seen = missed.length ? st.challenges.length : Math.min(CORE_CHALLENGES, st.challenges.length);
+    st.challenges.slice(seen).forEach(c=>out.push(c));
+    (st.extra||[]).forEach(c=>out.push(c));
+  });
+  return out;
+}
+function returnDue(){
+  if(returnRoundDoneNow || S.done.length===0) return false;
+  if(sessionGapMs < RETURN_AFTER_MS) return false;
+  if(S.returnDoneAt && (Date.now()-S.returnDoneAt) < RETURN_AFTER_MS) return false;
+  return returnPool().length>0;
+}
+// The number promised on screen is the number actually available, which near the end of the
+// content can be fewer than the round's ceiling.
+function returnRoundSize(){ return Math.min(RETURN_ROUND_LEN, returnPool().length); }
+function returnIntroScreen(){
+  const days=Math.max(2, Math.floor(sessionGapMs/(24*60*60*1000)));
+  const count=returnRoundSize();
+  go(`<div class="card center" style="--c:var(--purple)">
+        <div class="badge-pop" style="color:var(--purple)">${icon('star')}</div>
+        <h2 style="margin-top:8px" class="neon">טוב לראות אותך, ${escapeHtml(S.name)}!</h2>
+        <p class="subtitle">עברו ${days} ימים מאז ששיחקת. ${count} שאלות קצרות כדי לבדוק מה נשאר —
+        חלקן דברים שפספסת, וחלקן שאלות שעוד לא ראית.</p>
+        <button class="btn big" id="returnBtn" style="margin-top:16px">יאללה, בואו נבדוק ▶</button>
+        <button class="btn ghost big" id="skipReturnBtn" style="margin-top:10px">אולי אחר כך</button>
+      </div>`);
+  $('#returnBtn').onclick=()=>{ sfx.click(); startReturnRound(); };
+  $('#skipReturnBtn').onclick=()=>{ sfx.click(); returnRoundDoneNow=true; mapScreen(); };
+}
+function startReturnRound(){
+  const challenges=shuffle(returnPool()).slice(0, returnRoundSize());
+  reviewStation={ id:'return', title:'משימת חוזר', icon:'star', color:'var(--purple)',
+                  badgeName:'משימת חוזר', challenges };
+  cur={si:'return', ci:0, lives:LIVES, firstTry:true, practice:false, returnRound:true, hadMistake:false};
+  renderChallenge();
 }
 
 /* ----- Weak-topic review round ----- */
@@ -2106,6 +2209,9 @@ window.addEventListener('error', ()=>{
   const resultsCode=params.get('results'), teacherFlag=params.get('teacher'), classCode=params.get('class'), classNameParam=params.get('cn');
   if(resultsCode) return classResultsScreen(resultsCode);
   if(teacherFlag) return teacherHubScreen();
+  // A child who has been away long enough is met with the return visit rather than having to
+  // spot a button for it.
+  if(S.onboarded && returnDue()) return returnIntroScreen();
   if(classCode){
     // Arriving through a class link already answers "are you playing with a class?" — don't ask again,
     // even if the join fetch is still in flight when the kid hits start.
