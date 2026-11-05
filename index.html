@@ -1092,6 +1092,12 @@ function load(){
   if(!S.missed || typeof S.missed!=='object' || Array.isArray(S.missed)) S.missed={};
   if(!S.deviceId){ try{ S.deviceId=crypto.randomUUID(); }catch(e){ S.deviceId='d'+Date.now()+Math.random().toString(36).slice(2); } }
 }
+// A full restart has to forget the per-question history too — otherwise the missed list and the
+// return-visit timer from the old run keep opening worlds and scheduling rounds in the new one.
+function resetProgress(){
+  S.score=0; S.done=[]; S.partial={}; S.weakTopics=[]; S.reviewDone=false; S.missed={};
+  delete S.advRound; delete S.returnDoneAt; streak=0; save();
+}
 function save(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify({name:S.name,score:S.score,done:S.done,muted:S.muted,partial:S.partial,advRound:S.advRound,advancedDone:S.advancedDone,advancedPlays:S.advancedPlays,onboarded:S.onboarded,weakTopics:S.weakTopics,reviewDone:S.reviewDone,deviceId:S.deviceId,classId:S.classId,classCode:S.classCode,className:S.className,classAsked:S.classAsked,classSkippedOffline:S.classSkippedOffline,
     missed:S.missed,returnDoneAt:S.returnDoneAt,lastPlayedAt:Date.now()})); }catch(e){}
@@ -1232,6 +1238,7 @@ function startScreen(){
     </div>
   `);
   const ni=$('#nameInput'); ni.focus(); ni.select();
+  ni.onkeydown=(e)=>{ if(e.key==='Enter') $('#startBtn').click(); };
   $('#startBtn').onclick=()=>{
     const v=$('#nameInput').value.trim();
     S.name = v || 'סוכן/ת'; save(); sfx.click();
@@ -1240,7 +1247,7 @@ function startScreen(){
     if(!S.classCode && !S.classAsked) return classCodeScreen();
     S.onboarded ? mapScreen() : onboardingScreen();
   };
-  const rb=$('#resetBtn'); if(rb) rb.onclick=()=>{ if(confirm('להתחיל את כל המשחק מחדש?')){ S.score=0;S.done=[];S.partial={};S.weakTopics=[];S.reviewDone=false;delete S.advRound;streak=0;save();sfx.click();startScreen(); } };
+  const rb=$('#resetBtn'); if(rb) rb.onclick=()=>{ if(confirm('להתחיל את כל המשחק מחדש?')){ resetProgress();sfx.click();startScreen(); } };
 }
 
 /* ----- Class code (own step, straight after "start") -----
@@ -1629,7 +1636,9 @@ async function classResultsScreen(code){
   const {cls, n, avgScore, completedCount, advancedCount, topicStats}=data;
   const ranked=topicStats.filter(t=>t.pct!=null).sort((a,b)=>b.pct-a.pct);
   const noData=topicStats.filter(t=>t.pct==null);
-  const strongest=ranked.slice(0,1), weakest=ranked.length>1?ranked.slice(-1):[];
+  // A tie at the top and bottom (e.g. every topic at 100%) has no topic worth singling out to strengthen.
+  const strongest=ranked.slice(0,1);
+  const weakest=(ranked.length>1 && ranked[ranked.length-1].pct<ranked[0].pct)?ranked.slice(-1):[];
   const bar=(t)=>`
     <div class="topic-bar-row">
       <div class="topic-bar-head">
@@ -1736,7 +1745,7 @@ function mapScreen(){
   const anb=$('#advNewBtn'); if(anb) anb.onclick=()=>{ if(confirm('להתחיל סבב אתגר מתקדם חדש? הסבב הנוכחי בתהליך יימחק.')){ sfx.click(); startAdvanced(); } };
   $('#resetAllBtn').onclick=()=>{
     if(confirm('לאפס את כל המשחק ולהתחיל מההתחלה? כל ההתקדמות תימחק.')){
-      sfx.click(); S.score=0; S.done=[]; S.partial={}; S.weakTopics=[]; S.reviewDone=false; delete S.advRound; streak=0; save(); updateHUD(); startScreen();
+      sfx.click(); resetProgress(); updateHUD(); startScreen();
     }
   };
 }
@@ -1853,7 +1862,7 @@ function renderChallenge(){
   const st=curStation(), ch=st.challenges[cur.ci];
   cur.firstTry=true;
   if(cur.advanced){ if(S.advRound){ S.advRound.ci=cur.ci; S.advRound.lives=cur.lives; save(); } }
-  else if(!cur.practice && !cur.review){ S.partial[st.id]=cur.ci; save(); }  // remember where we are (resume support)
+  else if(!cur.practice && !cur.review && !cur.returnRound){ S.partial[st.id]=cur.ci; save(); }  // remember where we are (resume support)
   updateHUD();
   // Dots show the world as it currently stands: the short path, or the full one once it opened.
   const dots=st.challenges.slice(0,worldLength(st)).map((_,i)=>`<div class="dot ${i<cur.ci?'on':''} ${i===cur.ci?'cur on':''}" style="--c:${st.color}"></div>`).join('');
@@ -1877,6 +1886,7 @@ function renderChallenge(){
     sfx.click();
     if(cur.advanced) startAdvanced();
     else if(cur.review) startReviewRound();
+    else if(cur.returnRound) startReturnRound();
     else { S.partial[st.id]=0; save(); startStation(cur.si); }
   };
 }
@@ -2538,7 +2548,7 @@ function certScreen(){
     }, `תעודת-סוכן-סייבר-${S.name}.png`);
   };
   $('#advBtn2').onclick=()=>{ sfx.click(); openAdvanced(); };
-  $('#againBtn').onclick=()=>{ sfx.click(); if(confirm('להתחיל מחדש ולשחק שוב?')){ S.score=0;S.done=[];S.partial={};S.weakTopics=[];S.reviewDone=false;delete S.advRound;streak=0;save(); startScreen(); } };
+  $('#againBtn').onclick=()=>{ sfx.click(); if(confirm('להתחיל מחדש ולשחק שוב?')){ resetProgress(); startScreen(); } };
 }
 
 /* ---------- confetti ---------- */
