@@ -1,5 +1,5 @@
 /* סוכני הסייבר — Service Worker (PWA offline shell) */
-const CACHE = 'cyber-agents-v7';
+const CACHE = 'cyber-agents-v8';
 const ASSETS = [
   '/', '/index.html', '/manifest.webmanifest', '/manifest-teacher.webmanifest',
   '/icons/icon-192.png', '/icons/icon-512.png',

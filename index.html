@@ -30,10 +30,10 @@
        which class it was ever for. */
   var params = new URLSearchParams(location.search);
   if (params.get('teacher')) {
-    document.title = 'סוכני הסייבר — אזור מורה';
+    document.title = 'סוכני הסייבר — ניהול כיתות';
     document.getElementById('manifestLink').href = '/manifest-teacher.webmanifest';
     document.getElementById('appleTouchIcon').href = '/icons/teacher-apple-touch-icon.png';
-    document.getElementById('appleTitle').content = 'אזור מורה';
+    document.getElementById('appleTitle').content = 'ניהול כיתות';
   } else if (params.get('class')) {
     var className = params.get('cn') || '';
     document.title = 'סוכני הסייבר' + (className ? ' — ' + className : '');
@@ -208,6 +208,14 @@
   .myclass-info{min-width:0;text-align:start}
   .myclass-name{font-weight:800;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .myclass-code{font-size:11px;color:var(--muted);direction:ltr;text-align:start}
+  .myclass-stats{font-size:12px;color:var(--muted);margin-top:2px}
+  .myclass-row{flex-wrap:wrap}
+  .myclass-info{flex:1 1 170px}
+  .myclass-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;margin-inline-start:auto}
+  .new-class{display:flex;gap:8px;margin-top:14px}
+  .new-class input{flex:1;min-width:0;padding:12px 14px;border-radius:14px;background:#0a1128;
+    border:2px solid var(--cyan);color:var(--ink);font-size:16px;font-weight:700;text-align:center}
+  .new-class .btn{width:auto;margin:0;padding:12px 16px;flex-shrink:0}
   .myclass-count{font-weight:900;font-size:13px;color:var(--cyan);white-space:nowrap}
 
   /* ---------- Map ---------- */
@@ -1015,10 +1023,6 @@ async function deleteClassByCode(code){
 async function listMyClasses(){
   return sbRpc('list_my_classes', {p_teacher_code:getTeacherCode()});
 }
-// Adopt a class that has no teacher yet (created before teacher codes existed).
-async function claimClassByCode(code){
-  return sbRpc('claim_class_by_code', {p_code:(code||'').trim(), p_teacher_code:getTeacherCode()});
-}
 async function joinClass(code){
   const cls=await findClassByCode(code);
   if(!cls) return null;
@@ -1233,7 +1237,7 @@ function startScreen(){
       <input id="nameInput" maxlength="16" placeholder="הקלד/י את השם שלך כאן" value="${S.name==='סוכן/ת'?'':escapeHtml(S.name)}" />
       <button class="btn big" id="startBtn">${S.done.length? 'המשך משימה ▶':'התחל משימה ▶'}</button>
       ${S.done.length? `<button class="btn ghost big" id="resetBtn" style="margin-top:10px">התחל מחדש 🔄</button>`:''}
-      <div class="hint">🔐 השם וההתקדמות נשמרים רק במכשיר שלך.</div>
+      <div class="hint">${S.classCode?'📊 ההתקדמות שלך נכנסת לסיכום של הכיתה.':'🔐 השם וההתקדמות נשמרים רק במכשיר שלך.'}</div>
       <div class="credit">נוצר ע"י אלון ואורי מרקוביץ</div>
     </div>
   `);
@@ -1242,76 +1246,9 @@ function startScreen(){
   $('#startBtn').onclick=()=>{
     const v=$('#nameInput').value.trim();
     S.name = v || 'סוכן/ת'; save(); sfx.click();
-    // Ask for a teacher's class code only here — after "start", never on the screen before it.
-    // Skipped entirely for kids who arrived through a class link, or who already answered once.
-    if(!S.classCode && !S.classAsked) return classCodeScreen();
     S.onboarded ? mapScreen() : onboardingScreen();
   };
   const rb=$('#resetBtn'); if(rb) rb.onclick=()=>{ if(confirm('להתחיל את כל המשחק מחדש?')){ resetProgress();sfx.click();startScreen(); } };
-}
-
-/* ----- Class code (own step, straight after "start") -----
-   Progressive disclosure: a kid playing alone should never meet a PIN field on the way in,
-   so this asks once, right here, with an equally easy way past it. */
-function classCodeScreen(){
-  go(`
-    <div class="card center" style="--c:var(--cyan)">
-      <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('network')}</div>
-      <h2 style="margin-top:6px" class="neon">משחק/ת עם הכיתה, ${escapeHtml(S.name)}?</h2>
-      <p class="subtitle">צריך/ה קוד כיתה מהמורה כדי להיכנס למשחק.</p>
-      <label for="classCodeInput" class="name-label" style="margin-top:18px">קוד הכיתה מהמורה</label>
-      <input id="classCodeInput" maxlength="6" placeholder="לדוגמה: 482915"
-        autocomplete="off" inputmode="numeric" pattern="[0-9]*" spellcheck="false" aria-describedby="codeErr"
-        style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
-        border:2px solid var(--cyan);color:var(--ink);font-size:20px;text-align:center;font-weight:900;letter-spacing:5px;
-        font-variant-numeric:tabular-nums;box-shadow:0 0 14px -4px var(--cyan)" />
-      <div id="codeErr" class="code-err" role="alert"></div>
-      <button class="btn big" id="joinBtn">הצטרף/י לכיתה ▶</button>
-      <button class="btn ghost big" id="soloBtn" hidden style="margin-top:10px">המשך/י בלי כיתה ▶</button>
-      <div class="hint" id="soloHint" hidden>ההתקדמות תישמר במכשיר שלך, ואפשר להצטרף לכיתה מאוחר יותר.</div>
-    </div>
-  `);
-  const inp=$('#classCodeInput'), err=$('#codeErr'), joinBtn=$('#joinBtn');
-  inp.focus();
-  inp.oninput=()=>{ inp.value=inp.value.replace(/\D/g,''); err.textContent=''; err.style.color=''; inp.style.borderColor='var(--cyan)'; };
-  const proceed=()=>{ S.classAsked=true; save(); S.onboarded ? mapScreen() : onboardingScreen(); };
-  // The stations are entirely offline content — a classroom server that's down must never be the
-  // reason a kid can't play at all. This is deliberately NOT the same as declining a class:
-  // classAsked stays unset, so they're offered the join again next time the game starts.
-  const proceedSolo=()=>{ S.classSkippedOffline=true; save(); S.onboarded ? mapScreen() : onboardingScreen(); };
-  const soloBtn=$('#soloBtn'), soloHint=$('#soloHint');
-  const offerSolo=()=>{ soloBtn.hidden=false; soloHint.hidden=false; };
-  soloBtn.onclick=()=>{ sfx.click(); proceedSolo(); };
-  // Someone already let through while the server was down shouldn't have to sit through the
-  // timeout again on every launch — give them the way out up front.
-  if(S.classSkippedOffline) offerSolo();
-  const showErr=(msg)=>{
-    err.textContent=msg; inp.style.borderColor='var(--bad)';
-    inp.focus(); inp.select();                       // focus-management: land the kid back on the bad field
-    joinBtn.disabled=false; joinBtn.textContent='הצטרף/י לכיתה ▶';
-  };
-  joinBtn.onclick=async()=>{
-    const code=inp.value.trim();
-    if(!code) return showErr('צריך להקליד קוד כיתה כדי להמשיך.');
-    sfx.click();
-    joinBtn.disabled=true; joinBtn.textContent='מצטרף/ת…';
-    let cls=null;
-    try{ cls=await joinClass(code); }
-    catch(e){
-      // Distinct from a bad code: the code may well be fine, we just can't check it right now.
-      offerSolo();
-      return showErr('לא הצלחנו להתחבר לשרת הכיתות כרגע. אפשר לנסות שוב, או להמשיך בלי כיתה.');
-    }
-    if(!cls) return showErr('הקוד הזה לא נמצא. כדאי לבדוק שוב עם המורה.');
-    sfx.badge(); syncStudentProgress();
-    // Confirm which class they actually landed in before moving on — a mistyped-but-valid
-    // code should be visible to the kid, not silently accepted.
-    err.style.color='var(--green)';
-    err.textContent=`הצטרפת לכיתת ${cls.name||cls.code}! ✅`;
-    joinBtn.textContent='מצוין! ממשיכים…';
-    setTimeout(proceed, 1100);
-  };
-  inp.onkeydown=(e)=>{ if(e.key==='Enter') joinBtn.click(); };
 }
 
 /* ----- Onboarding (shown once, before the first station) ----- */
@@ -1363,9 +1300,9 @@ function teacherLoginScreen(prefill){
   go(`
     <div class="card center" style="--c:var(--cyan)">
       <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('shield')}</div>
-      <h2 style="margin-top:6px" class="neon">כניסת מורה/ה</h2>
+      <h2 style="margin-top:6px" class="neon">ניהול כיתות</h2>
       <p class="subtitle">הקוד האישי שלך הוא כל מה שצריך — בלי מייל ובלי סיסמה. הוא מחזיק את כל הכיתות שלך, ועובד מכל מכשיר.</p>
-      <label for="teacherCodeInput" class="name-label" style="margin-top:18px">קוד המורה שלך</label>
+      <label for="teacherCodeInput" class="name-label" style="margin-top:18px">הקוד שלך</label>
       <input id="teacherCodeInput" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
         placeholder="0000" value="${escapeHtml(formatTeacherCode(prefill||''))}"
         style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;direction:ltr;
@@ -1374,8 +1311,7 @@ function teacherLoginScreen(prefill){
       <div id="loginErr" class="code-err" role="alert"></div>
       <button class="btn big" id="enterBtn">כניסה ▶</button>
       <div class="name-label" style="margin-top:22px">אין לך עדיין קוד?</div>
-      <button class="btn ghost big" id="newCodeBtn" style="margin-top:8px">צור/י קוד מורה חדש</button>
-      <div class="hint">רק מורים נכנסים כאן. תלמידים משחקים בלי שום קוד מורה.</div>
+      <button class="btn ghost big" id="newCodeBtn" style="margin-top:8px">צור/י קוד חדש</button>
     </div>
   `);
   const inp=$('#teacherCodeInput'), err=$('#loginErr'), btn=$('#enterBtn');
@@ -1388,7 +1324,7 @@ function teacherLoginScreen(prefill){
   };
   btn.onclick=async()=>{
     const code=digitsOnly(inp.value);
-    if(code.length!==4) return fail('קוד המורה הוא 4 ספרות.');
+    if(code.length!==4) return fail('הקוד הוא 4 ספרות.');
     sfx.click(); btn.disabled=true; btn.textContent='נכנס…';
     // The only way to tell a real code from a wrong one is to ask the server, so the first
     // class-list fetch doubles as the check. Store it first; clear it again if it is rejected.
@@ -1410,7 +1346,7 @@ function teacherChooseCodeScreen(){
   go(`
     <div class="card center" style="--c:var(--cyan)">
       <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('shield')}</div>
-      <h2 style="margin-top:6px" class="neon">בחר/י קוד מורה</h2>
+      <h2 style="margin-top:6px" class="neon">בחר/י קוד אישי</h2>
       <p class="subtitle">ארבע ספרות לבחירתך. זה יהיה הקוד הקבוע שלך לכל הכיתות, מכל מכשיר — בחרו משהו שתזכרו.</p>
       <label for="pickCodeInput" class="name-label" style="margin-top:18px">הקוד שאני בוחר/ת</label>
       <input id="pickCodeInput" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
@@ -1466,24 +1402,19 @@ function teacherNewCodeScreen(code){
   $('#copyCodeBtn').onclick=()=>{ sfx.click(); copyText(formatTeacherCode(code), $('#copyCodeBtn')); };
   $('#savedBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
 }
+/* ----- My classes: the one management screen. Create a class, send it its link, and its
+   results show up right here, in the same list — no separate screen per class to dig into. ----- */
 function teacherHubScreen(){
   if(!signedIn()) return teacherLoginScreen();
   go(`
     <div class="card center">
-      <h2 class="neon">אזור מורה/ה</h2>
-      <p class="subtitle">כמו ב-Kahoot: כל כיתה מקבלת שם + קוד PIN. תלמידים לא רואים שום תפריט "מצב כיתה" — הם פשוט נכנסים דרך הקישור שתשלחו, וזהו.</p>
-      <div class="name-label" style="margin-top:14px">שם הכיתה</div>
-      <input id="classNameInput" maxlength="40" placeholder='לדוגמה: ז׳1 — מחשבים'
-        style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
-        border:2px solid var(--cyan);color:var(--ink);font-size:17px;text-align:center;font-weight:700" />
-      <button class="btn big" id="createBtn" style="margin-top:10px">➕ צור/י כיתה וקבל/י PIN</button>
-      <div class="name-label" style="margin-top:18px">כיתה קיימת שעדיין לא משויכת אליך?</div>
-      <input id="codeInput" maxlength="6" placeholder="לדוגמה: 482915" inputmode="numeric" pattern="[0-9]*"
-        style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;
-        border:2px solid var(--line);color:var(--ink);font-size:18px;text-align:center;font-weight:900;letter-spacing:4px;
-        font-variant-numeric:tabular-nums" />
-      <div id="claimErr" class="code-err" role="alert"></div>
-      <button class="btn ghost big" id="viewBtn">שייך/י לקוד שלי</button>
+      <h2 class="neon">הכיתות שלי</h2>
+      <p class="subtitle">יוצרים כיתה, שולחים לה את הקישור — והתוצאות שלה מופיעות כאן.</p>
+      <div class="new-class">
+        <input id="classNameInput" maxlength="40" placeholder="שם הכיתה, למשל ז׳1" aria-label="שם כיתה חדשה" />
+        <button class="btn" id="createBtn">➕ צור/י</button>
+      </div>
+      <div id="createErr" class="code-err" role="alert"></div>
       <div id="myClassesWrap"></div>
       <div class="hint" style="margin-top:22px">
         הקוד שלך: <b id="myCode" style="direction:ltr;display:inline-block;font-variant-numeric:tabular-nums">${escapeHtml(maskTeacherCode(getTeacherCode()))}</b>
@@ -1492,28 +1423,16 @@ function teacherHubScreen(){
       <button class="link-btn" id="signOutBtn">יציאה</button>
     </div>
   `);
-  $('#createBtn').onclick=async()=>{
-    const name=$('#classNameInput').value.trim();
-    sfx.click();
-    go(`<div class="card center"><p class="subtitle">יוצר/ת כיתה…</p></div>`);
-    try{ const cls=await createClass(name); sfx.badge(); teacherClassReadyScreen(cls); }
-    catch(e){
-      go(`<div class="card center"><p class="subtitle">משהו השתבש ביצירת הכיתה (בעיית רשת). נסו שוב.</p>
-            <button class="btn big" id="backBtn" style="margin-top:10px">חזרה 🔙</button></div>`);
-      $('#backBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
-    }
+  const nameInp=$('#classNameInput'), createBtn=$('#createBtn');
+  createBtn.onclick=async()=>{
+    const name=nameInp.value.trim();
+    if(!name){ $('#createErr').textContent='צריך לתת לכיתה שם.'; nameInp.focus(); return; }
+    sfx.click(); createBtn.disabled=true; $('#createErr').textContent='';
+    try{ const cls=await createClass(name); sfx.badge(); classLinkScreen(cls); }
+    catch(e){ createBtn.disabled=false; $('#createErr').textContent='לא הצלחנו ליצור את הכיתה (בעיית רשת). נסו שוב.'; }
   };
-  $('#viewBtn').onclick=async()=>{
-    const code=$('#codeInput').value.trim(), err=$('#claimErr');
-    if(!code) return;
-    sfx.click(); err.textContent='';
-    let ok=false;
-    try{ ok=await claimClassByCode(code); }
-    catch(e){ err.textContent='בעיית רשת. נסו שוב.'; return; }
-    if(!ok){ err.textContent='הקוד לא נמצא, או שהכיתה כבר שייכת למורה אחר/ת.'; return; }
-    sfx.badge(); teacherClassReadyScreen(code);
-  };
-  // The code is masked by default because this screen gets shown on a classroom projector.
+  nameInp.onkeydown=(e)=>{ if(e.key==='Enter') createBtn.click(); };
+  // The code is masked by default in case this screen is shown on a projector.
   $('#revealBtn').onclick=()=>{
     sfx.click();
     const el=$('#myCode'), b=$('#revealBtn'), shown=b.textContent==='הסתרה';
@@ -1521,103 +1440,96 @@ function teacherHubScreen(){
     b.textContent = shown ? 'הצגה' : 'הסתרה';
   };
   $('#signOutBtn').onclick=()=>{
-    if(!confirm('לצאת? הכיתות נשמרות בשרת — אפשר לחזור בכל רגע עם אותו קוד מורה. בלי הקוד אין דרך לשחזר אותן.')) return;
+    if(!confirm('לצאת? הכיתות נשמרות בשרת — אפשר לחזור בכל רגע עם אותו קוד. בלי הקוד אין דרך לשחזר אותן.')) return;
     sfx.click(); signOut(); teacherLoginScreen();
   };
   renderMyClassesList();
 }
-// The teacher's classes, read from their account — one query, counts included. Because this comes
-// from the server rather than this device, it's identical on every phone/computer they sign in on.
+// One aggregate line per class. Uses the same name-free function as the results page, so this
+// list can never show who a child is — only how many played and how the class did.
+async function classSummary(code){
+  const students=await sbRpc('get_class_students_safe', {p_code:code});
+  const n=students.length;
+  return { n,
+    avg: n ? Math.round(students.reduce((s,x)=>s+x.score,0)/n) : 0,
+    finished: students.filter(x=>x.stations_done>=x.total_stations).length };
+}
 async function renderMyClassesList(){
   const wrap=$('#myClassesWrap'); if(!wrap) return;
-  wrap.innerHTML=`<p class="subtitle" id="myClassesLoading" style="margin-top:20px">טוען את הכיתות שלך…</p>`;
+  wrap.innerHTML=`<p class="subtitle" style="margin-top:20px">טוען את הכיתות…</p>`;
   let mine;
   try{ mine=await listMyClasses(); }
   catch(e){
-    const l=$('#myClassesLoading');
-    if(l) l.outerHTML=`<p class="subtitle" style="margin-top:20px">לא הצלחנו לטעון את הכיתות (בעיית רשת). הן שמורות — נסו לרענן.</p>`;
+    if($('#myClassesWrap')) wrap.innerHTML=`<p class="subtitle" style="margin-top:20px">לא הצלחנו לטעון את הכיתות (בעיית רשת). הן שמורות — נסו לרענן.</p>`;
     return;
   }
-  const loading=$('#myClassesLoading'); if(!loading) return;
+  if(!$('#myClassesWrap')) return;               // navigated away while loading
   if(!mine.length){
-    loading.outerHTML=`<p class="subtitle" style="margin-top:20px">עוד אין כיתות שמשויכות לקוד שלך. צרו את הראשונה למעלה 👆</p>`;
+    wrap.innerHTML=`<p class="subtitle" style="margin-top:20px">עוד אין כיתות. צרו את הראשונה למעלה 👆</p>`;
     return;
   }
-  loading.outerHTML=`<div class="recap-title" style="margin-top:20px">📚 הכיתות שלי (${mine.length})</div>
-    <div class="myclass-list">${mine.map(c=>`
+  wrap.innerHTML=`<div class="myclass-list">${mine.map(c=>`
     <div class="myclass-row" data-code="${escapeHtml(c.code)}">
       <div class="myclass-info">
         <div class="myclass-name">${escapeHtml(c.name||'כיתה')}</div>
-        <div class="myclass-code">PIN: ${escapeHtml(c.code)}</div>
+        <div class="myclass-stats" data-stats="${escapeHtml(c.code)}">${c.students} שיחקו</div>
       </div>
-      <div class="myclass-count">${c.students} 🧑‍🎓</div>
-      <button class="myclass-del" data-del="${escapeHtml(c.code)}" title="מחק/י כיתה">🗑️</button>
+      <div class="myclass-actions">
+        <button class="mini-btn" data-link="${escapeHtml(c.code)}">📋 קישור</button>
+        <button class="mini-btn" data-res="${escapeHtml(c.code)}">📊 תוצאות</button>
+        <button class="myclass-del" data-del="${escapeHtml(c.code)}" title="מחיקת הכיתה" aria-label="מחיקת הכיתה ${escapeHtml(c.name||'')}">🗑️</button>
+      </div>
     </div>`).join('')}</div>`;
-  document.querySelectorAll('.myclass-row').forEach(row=>{
-    row.onclick=(e)=>{ if(e.target.closest('.myclass-del')) return; sfx.click(); teacherClassReadyScreen(row.dataset.code); };
+  mine.forEach(c=>{
+    classSummary(c.code).then(sm=>{
+      const el=document.querySelector(`[data-stats="${CSS.escape(c.code)}"]`); if(!el) return;
+      el.textContent = sm.n ? `${sm.n} שיחקו · ${sm.finished} סיימו הכול · ממוצע ${sm.avg} נק'` : 'עוד אף אחד לא שיחק';
+    }).catch(()=>{});
   });
-  document.querySelectorAll('.myclass-del').forEach(btn=>{
+  wrap.querySelectorAll('.myclass-row').forEach(row=>{
+    row.onclick=()=>{ sfx.click(); classResultsScreen(row.dataset.code); };
+  });
+  wrap.querySelectorAll('[data-link]').forEach(b=>{
+    b.onclick=(e)=>{ e.stopPropagation(); sfx.click();
+      const c=mine.find(x=>x.code===b.dataset.link); copyText(studentLinkFor(c), b); };
+  });
+  wrap.querySelectorAll('[data-res]').forEach(b=>{
+    b.onclick=(e)=>{ e.stopPropagation(); sfx.click(); classResultsScreen(b.dataset.res); };
+  });
+  wrap.querySelectorAll('[data-del]').forEach(btn=>{
     btn.onclick=async(e)=>{
       e.stopPropagation();
-      const code=btn.dataset.del;
-      if(!confirm(`למחוק לצמיתות את הכיתה ${code}? כל נתוני התלמידים שהצטרפו אליה יימחקו ולא ניתן לשחזר.`)) return;
+      const c=mine.find(x=>x.code===btn.dataset.del);
+      if(!confirm(`למחוק לצמיתות את הכיתה "${c.name}"? כל התוצאות שלה יימחקו ולא ניתן לשחזר.`)) return;
       sfx.click();
-      // Delete on the server FIRST, and only forget the code locally once that succeeded.
-      // The teacher's code list is the ONLY way back to a class, so dropping it before a
-      // failed request would strand the class (and its students) in the database forever.
-      try{ await deleteClassByCode(code); }
+      try{ await deleteClassByCode(c.code); }
       catch(err){ alert('לא הצלחנו למחוק כרגע (בעיית רשת). הכיתה נשארה, אפשר לנסות שוב.'); return; }
       renderMyClassesList();
     };
   });
 }
-async function teacherClassReadyScreen(codeOrCls){
-  go(`<div class="card center"><p class="subtitle">טוען…</p></div>`);
-  let cls;
-  try{ cls = (typeof codeOrCls==='object') ? codeOrCls : await findClassByCode(codeOrCls); }catch(e){ cls=null; }
-  if(!cls){
-    go(`<div class="card center"><p class="subtitle">קוד לא נמצא או בעיית רשת.</p>
-          <button class="btn big" id="backBtn" style="margin-top:10px">חזרה 🔙</button></div>`);
-    $('#backBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
-    return;
-  }
-  const studentLink=studentLinkFor(cls), resultsLink=linkFor('results',cls.code);
+// Shown once, right after a class is created: the only thing to do next is send its link.
+function safeDecode(u){ try{ return decodeURI(u); }catch(e){ return u; } }
+function classLinkScreen(cls){
+  const link=studentLinkFor(cls);
+  const canShare=!!navigator.share;
   go(`
     <div class="card center">
-      <h2 class="neon">${escapeHtml(cls.name||'כיתה')}</h2>
-      <div class="chip" id="pinChip" title="לחצו להעתקה" style="--c:var(--cyan);font-size:26px;letter-spacing:5px;padding:12px 18px;margin-top:8px;cursor:pointer">${escapeHtml(cls.code)}</div>
-      <div class="name-label" style="margin-top:18px">1️⃣ שלחו לתלמידים — הצטרפות אוטומטית, בלי שום הגדרה מצידם</div>
-      <div class="link-box" id="studentLinkBox" title="לחצו להעתקה" style="cursor:pointer"><span id="studentLinkText">${escapeHtml(studentLink)}</span></div>
+      <div class="badge-pop" style="font-size:56px;color:var(--green)">${icon('check')}</div>
+      <h2 class="neon" style="margin-top:6px">הכיתה «${escapeHtml(cls.name||'כיתה')}» מוכנה</h2>
+      <p class="subtitle">שלחו לכיתה את הקישור הזה. מי שנכנס דרכו נספר בתוצאות של הכיתה — בלי קוד ובלי הרשמה.</p>
+      <div class="link-box" id="linkBox" title="לחצו להעתקה" style="cursor:pointer;margin-top:14px"><span>${escapeHtml(safeDecode(link))}</span></div>
       <div class="btn-row">
-        <button class="btn adv-btn" id="copyStudentBtn">📋 העתק/י קישור</button>
-        <a class="btn ghost" id="openStudentBtn" href="${escapeHtml(studentLink)}" target="_blank" rel="noopener">🔗 פתח/י קישור</a>
+        <button class="btn adv-btn" id="copyLinkBtn">📋 העתק/י קישור</button>
+        ${canShare?`<button class="btn ghost" id="shareBtn">📤 שיתוף</button>`:''}
       </div>
-      <div class="name-label" style="margin-top:18px">2️⃣ שלחו להורים — סיכום ויזואלי של הכיתה, בלי שמות או ציונים אישיים</div>
-      <div class="link-box" id="resultsLinkBox" title="לחצו להעתקה" style="cursor:pointer"><span id="resultsLinkText">${escapeHtml(resultsLink)}</span></div>
-      <div class="btn-row">
-        <button class="btn adv-btn" id="copyResultsBtn">📋 העתק/י קישור</button>
-        <a class="btn ghost" id="openResultsBtn" href="${escapeHtml(resultsLink)}" target="_blank" rel="noopener">🔗 פתח/י קישור</a>
-      </div>
-      <button class="btn ghost big" id="backBtn" style="margin-top:16px">חזרה לכל הכיתות שלי 🔙</button>
-      <button class="btn danger big" id="deleteBtn" style="margin-top:18px">🗑️ מחק/י כיתה זו לצמיתות</button>
+      <button class="btn ghost big" id="backBtn" style="margin-top:16px">לכל הכיתות 🔙</button>
     </div>
   `);
-  $('#pinChip').onclick=()=>{ sfx.click(); copyText(cls.code, $('#pinChip')); };
-  $('#studentLinkBox').onclick=()=>{ sfx.click(); copyText(studentLink, $('#copyStudentBtn')); };
-  $('#resultsLinkBox').onclick=()=>{ sfx.click(); copyText(resultsLink, $('#copyResultsBtn')); };
-  $('#copyStudentBtn').onclick=()=>{ sfx.click(); copyText(studentLink, $('#copyStudentBtn')); };
-  $('#copyResultsBtn').onclick=()=>{ sfx.click(); copyText(resultsLink, $('#copyResultsBtn')); };
-  $('#openStudentBtn').onclick=()=>{ sfx.click(); };
-  $('#openResultsBtn').onclick=()=>{ sfx.click(); };
+  $('#linkBox').onclick=()=>{ sfx.click(); copyText(link, $('#copyLinkBtn')); };
+  $('#copyLinkBtn').onclick=()=>{ sfx.click(); copyText(link, $('#copyLinkBtn')); };
+  if(canShare) $('#shareBtn').onclick=()=>{ sfx.click(); navigator.share({title:'סוכני הסייבר', text:'משחק בטיחות ברשת — '+(cls.name||''), url:link}).catch(()=>{}); };
   $('#backBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
-  $('#deleteBtn').onclick=async()=>{
-    if(!confirm(`למחוק לצמיתות את הכיתה "${cls.name}" (${cls.code})? כל נתוני התלמידים שהצטרפו אליה יימחקו ולא ניתן לשחזר.`)) return;
-    sfx.click();
-    // Server first, then forget locally — see the note on the other delete path.
-    try{ await deleteClassByCode(cls.code); }
-    catch(err){ alert('לא הצלחנו למחוק כרגע (בעיית רשת). הכיתה נשארה, אפשר לנסות שוב.'); return; }
-    teacherHubScreen();
-  };
 }
 
 /* ----- Class results — the shareable parent-facing page (?results=CODE). Class-wide only, no names. ----- */
@@ -1628,9 +1540,9 @@ async function classResultsScreen(code){
   if(!data){
     go(`<div class="card center">
           <p class="subtitle">קוד לא נמצא או בעיית רשת. נסו שוב.</p>
-          <button class="btn ghost big" id="teacherBackBtn" style="margin-top:14px">🔙 חזרה למסך המורה</button>
+          ${signedIn()?`<button class="btn ghost big" id="teacherBackBtn" style="margin-top:14px">🔙 לכל הכיתות</button>`:''}
         </div>`);
-    $('#teacherBackBtn').onclick=()=>{ sfx.click(); teacherClassReadyScreen(code); };
+    if(signedIn()) $('#teacherBackBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
     return;
   }
   const {cls, n, avgScore, completedCount, advancedCount, topicStats}=data;
@@ -1677,12 +1589,16 @@ async function classResultsScreen(code){
       ${ranked.map(bar).join('')}
       ${noDataRow}`}
       <button class="btn big" id="refreshBtn" style="margin-top:18px">🔄 רענן</button>
-      <button class="btn ghost big" id="teacherBackBtn" style="margin-top:10px">🔙 חזרה למסך המורה</button>
+      ${signedIn()?`<button class="btn ghost big" id="copyResLinkBtn" style="margin-top:10px">📋 העתק/י קישור לעמוד הזה</button>
+      <button class="btn ghost big" id="teacherBackBtn" style="margin-top:10px">🔙 לכל הכיתות</button>`:''}
       <div class="credit">סוכני הסייבר — משחק בטיחות ברשת</div>
     </div>
   `);
   $('#refreshBtn').onclick=()=>{ sfx.click(); classResultsScreen(code); };
-  $('#teacherBackBtn').onclick=()=>{ sfx.click(); teacherClassReadyScreen(cls); };
+  if(signedIn()){
+    $('#copyResLinkBtn').onclick=()=>{ sfx.click(); copyText(linkFor('results',cls.code), $('#copyResLinkBtn')); };
+    $('#teacherBackBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
+  }
 }
 
 /* ----- Map ----- */
