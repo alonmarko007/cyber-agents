@@ -1296,7 +1296,13 @@ function copyText(text, btn){
 }
 /* ----- Teacher sign-in. The code IS the identity: no email, no password, no recovery. That
    last part is the whole reason the code is shown so insistently when it is created. ----- */
-function teacherLoginScreen(prefill){
+// A saved code the server no longer recognises (an old code, or one typed on another device and
+// since replaced) must not look like a network failure: forget it and ask for the code again.
+function codeRejected(){
+  signOut();
+  teacherLoginScreen('', 'הקוד שנשמר במכשיר הזה לא מוכר. הקלידו את הקוד שלכם שוב, או צרו קוד חדש.');
+}
+function teacherLoginScreen(prefill, notice){
   go(`
     <div class="card center" style="--c:var(--cyan)">
       <div class="badge-pop" style="font-size:56px;color:var(--cyan)">${icon('shield')}</div>
@@ -1308,7 +1314,7 @@ function teacherLoginScreen(prefill){
         style="width:100%;margin-top:8px;padding:14px;border-radius:14px;background:#0a1128;direction:ltr;
         border:2px solid var(--cyan);color:var(--ink);font-size:26px;text-align:center;font-weight:900;letter-spacing:10px;
         font-variant-numeric:tabular-nums;box-shadow:0 0 14px -4px var(--cyan)" />
-      <div id="loginErr" class="code-err" role="alert"></div>
+      <div id="loginErr" class="code-err" role="alert">${notice?escapeHtml(notice):''}</div>
       <button class="btn big" id="enterBtn">כניסה ▶</button>
       <div class="name-label" style="margin-top:22px">אין לך עדיין קוד?</div>
       <button class="btn ghost big" id="newCodeBtn" style="margin-top:8px">צור/י קוד חדש</button>
@@ -1429,7 +1435,7 @@ function teacherHubScreen(){
     if(!name){ $('#createErr').textContent='צריך לתת לכיתה שם.'; nameInp.focus(); return; }
     sfx.click(); createBtn.disabled=true; $('#createErr').textContent='';
     try{ const cls=await createClass(name); sfx.badge(); classLinkScreen(cls); }
-    catch(e){ createBtn.disabled=false; $('#createErr').textContent='לא הצלחנו ליצור את הכיתה (בעיית רשת). נסו שוב.'; }
+    catch(e){ if(isBadCodeError(e)) return codeRejected(); createBtn.disabled=false; $('#createErr').textContent='לא הצלחנו ליצור את הכיתה (בעיית רשת). נסו שוב.'; }
   };
   nameInp.onkeydown=(e)=>{ if(e.key==='Enter') createBtn.click(); };
   // The code is masked by default in case this screen is shown on a projector.
@@ -1460,6 +1466,7 @@ async function renderMyClassesList(){
   let mine;
   try{ mine=await listMyClasses(); }
   catch(e){
+    if(isBadCodeError(e)) return codeRejected();
     if($('#myClassesWrap')) wrap.innerHTML=`<p class="subtitle" style="margin-top:20px">לא הצלחנו לטעון את הכיתות (בעיית רשת). הן שמורות — נסו לרענן.</p>`;
     return;
   }
