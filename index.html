@@ -1098,6 +1098,7 @@ const ICON_PATHS = {
   heart:     '<path d="M12 20.3s-7.6-4.6-7.6-10.3A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 7.6 2.8c0 5.7-7.6 10.3-7.6 10.3z"/>',
   speaker:   '<path d="M4 9.5h3.2L11.5 6v12l-4.3-3.5H4z"/><path d="M15 9.2a4 4 0 0 1 0 5.6M17.6 6.8a7.4 7.4 0 0 1 0 10.4"/>',
   speakerOff:'<path d="M4 9.5h3.2L11.5 6v12l-4.3-3.5H4z"/><path d="m15.5 9.5 5 5M20.5 9.5l-5 5"/>',
+  trash:     '<path d="M4.5 7h15M9.5 7V5.2c0-.7.5-1.2 1.2-1.2h2.6c.7 0 1.2.5 1.2 1.2V7M6.5 7l.8 11.6c.1 1 .9 1.9 2 1.9h5.4c1.1 0 1.9-.9 2-1.9L17.5 7M10 11v5.5M14 11v5.5"/>',
   trophy:    '<path d="M7 4h10v4.2c0 3-2.2 5.3-5 5.6-2.8-.3-5-2.6-5-5.6V4z"/><path d="M7 5H4.5a2 2 0 0 0 0 4H7M17 5h2.5a2 2 0 0 1 0 4H17"/><path d="M12 13.8V17M9 20.5h6M9.5 20.5c0-1.8.9-2.8 2.5-2.8s2.5 1 2.5 2.8"/>'
 };
 const ICON_FILL_PATHS = {
@@ -1304,7 +1305,7 @@ function onboardingScreen(){
           <div class="onboard-text">${icon('trophy')} <b>אוספים תגים ונקודות</b><br>סיימו את כל העולמות ותקבלו תעודת סוכן/ת סייבר. אפשר גם לחזור ולתרגל.</div>
         </div>
       </div>
-      <button class="btn big" id="onboardBtn" style="margin-top:16px">בואו נתחיל! ▶</button>
+      <button class="btn big" id="onboardBtn" style="margin-top:16px">בואו נתחיל! </button>
     </div>
   `);
   $('#onboardBtn').onclick=()=>{ S.onboarded=true; save(); sfx.click(); mapScreen(); };
@@ -1346,7 +1347,7 @@ function teacherLoginScreen(prefill, notice){
         placeholder="0000" value="${escapeHtml(formatTeacherCode(prefill||''))}"
         class="code-field" />
       <div id="loginErr" class="code-err" role="alert">${notice?escapeHtml(notice):''}</div>
-      <button class="btn big" id="enterBtn">כניסה ▶</button>
+      <button class="btn big" id="enterBtn">כניסה </button>
       <div class="name-label" style="margin-top:22px">אין לך עדיין קוד?</div>
       <button class="btn ghost big" id="newCodeBtn" style="margin-top:8px">צור/י קוד חדש</button>
     </div>
@@ -1390,8 +1391,8 @@ function teacherChooseCodeScreen(){
         placeholder="0000"
         class="code-field" />
       <div id="pickErr" class="code-err" role="alert"></div>
-      <button class="btn big" id="makeBtn">זה הקוד שלי ▶</button>
-      <button class="btn ghost big" id="backLoginBtn" style="margin-top:10px">כבר יש לי קוד 🔙</button>
+      <button class="btn big" id="makeBtn">זה הקוד שלי </button>
+      <button class="btn ghost big" id="backLoginBtn" style="margin-top:10px">כבר יש לי קוד </button>
       <div class="hint">אין שחזור לקוד. אם תשכחו אותו, הכיתות שנוצרו איתו לא ייפתחו שוב.</div>
     </div>
   `);
@@ -1427,8 +1428,8 @@ function teacherNewCodeScreen(code){
       <p class="subtitle">מעכשיו נכנסים איתו מכל מכשיר. <b>אין שחזור לקוד</b> — כל הכיתות שתיצרו נפתחות רק דרכו.</p>
       <div class="code-show"><div class="num">${escapeHtml(formatTeacherCode(code))}</div>
       </div>
-      <button class="btn ghost big" id="copyCodeBtn" style="margin-top:8px">📋 העתקת הקוד</button>
-      <button class="btn big" id="savedBtn" style="margin-top:12px">אזכור אותו — המשך ▶</button>
+      <button class="btn ghost big" id="copyCodeBtn" style="margin-top:8px"> העתקת הקוד</button>
+      <button class="btn big" id="savedBtn" style="margin-top:12px">אזכור אותו — המשך </button>
     </div>
   `);
   $('#copyCodeBtn').onclick=()=>{ sfx.click(); copyText(formatTeacherCode(code), $('#copyCodeBtn')); };
@@ -1444,7 +1445,7 @@ function teacherHubScreen(){
       <p class="subtitle">יוצרים כיתה, שולחים לה את הקישור — והתוצאות שלה מופיעות כאן.</p>
       <div class="new-class">
         <input id="classNameInput" maxlength="40" placeholder="שם הכיתה, למשל ז׳1" aria-label="שם כיתה חדשה" />
-        <button class="btn" id="createBtn">➕ צור/י</button>
+        <button class="btn" id="createBtn"> צור/י</button>
       </div>
       <div id="createErr" class="code-err" role="alert"></div>
       <div id="myClassesWrap"></div>
@@ -1508,10 +1509,10 @@ async function renderMyClassesList(){
         <div class="myclass-stats" data-stats="${escapeHtml(c.code)}">${c.students} שיחקו</div>
       </div>
       <div class="myclass-actions">
-        <button class="mini-btn" data-link="${escapeHtml(c.code)}">📋 קישור</button>
-        <button class="mini-btn" data-res="${escapeHtml(c.code)}">📊 תוצאות</button>
-        <button class="mini-btn" data-test="${escapeHtml(c.code)}" title="פתיחת המשחק במצב בדיקה לכיתה הזו">🧪</button>
-        <button class="myclass-del" data-del="${escapeHtml(c.code)}" title="מחיקת הכיתה" aria-label="מחיקת הכיתה ${escapeHtml(c.name||'')}">🗑️</button>
+        <button class="mini-btn" data-link="${escapeHtml(c.code)}"> קישור</button>
+        <button class="mini-btn" data-res="${escapeHtml(c.code)}"> תוצאות</button>
+        <button class="mini-btn" data-test="${escapeHtml(c.code)}" title="פתיחת המשחק במצב בדיקה לכיתה הזו">בדיקה</button>
+        <button class="myclass-del" data-del="${escapeHtml(c.code)}" title="מחיקת הכיתה" aria-label="מחיקת הכיתה ${escapeHtml(c.name||'')}">${icon('trash')}</button>
       </div>
     </div>`).join('')}</div>`;
   mine.forEach(c=>{
@@ -1558,10 +1559,10 @@ function classLinkScreen(cls){
       <p class="subtitle">שלחו לכיתה את הקישור הזה. מי שנכנס דרכו נספר בתוצאות של הכיתה — בלי קוד ובלי הרשמה.</p>
       <div class="link-box" id="linkBox" title="לחצו להעתקה" style="cursor:pointer;margin-top:14px"><span>${escapeHtml(safeDecode(link))}</span></div>
       <div class="btn-row">
-        <button class="btn adv-btn" id="copyLinkBtn">📋 העתק/י קישור</button>
-        ${canShare?`<button class="btn ghost" id="shareBtn">📤 שיתוף</button>`:''}
+        <button class="btn adv-btn" id="copyLinkBtn"> העתק/י קישור</button>
+        ${canShare?`<button class="btn ghost" id="shareBtn"> שיתוף</button>`:''}
       </div>
-      <button class="btn ghost big" id="backBtn" style="margin-top:16px">לכל הכיתות 🔙</button>
+      <button class="btn ghost big" id="backBtn" style="margin-top:16px">לכל הכיתות </button>
     </div>
   `);
   $('#linkBox').onclick=()=>{ sfx.click(); copyText(link, $('#copyLinkBtn')); };
@@ -1578,7 +1579,7 @@ async function classResultsScreen(code){
   if(!data){
     go(`<div class="card center">
           <p class="subtitle">קוד לא נמצא או בעיית רשת. נסו שוב.</p>
-          ${signedIn()?`<button class="btn ghost big" id="teacherBackBtn" style="margin-top:14px">🔙 לכל הכיתות</button>`:''}
+          ${signedIn()?`<button class="btn ghost big" id="teacherBackBtn" style="margin-top:14px"> לכל הכיתות</button>`:''}
         </div>`);
     if(signedIn()) $('#teacherBackBtn').onclick=()=>{ sfx.click(); teacherHubScreen(); };
     return;
@@ -1626,9 +1627,9 @@ async function classResultsScreen(code){
       <div class="recap-title" style="margin-top:16px">🗺️ כל הנושאים</div>
       ${ranked.map(bar).join('')}
       ${noDataRow}`}
-      <button class="btn big" id="refreshBtn" style="margin-top:18px">🔄 רענן</button>
-      ${signedIn()?`<button class="btn ghost big" id="copyResLinkBtn" style="margin-top:10px">📋 העתק/י קישור לעמוד הזה</button>
-      <button class="btn ghost big" id="teacherBackBtn" style="margin-top:10px">🔙 לכל הכיתות</button>`:''}
+      <button class="btn big" id="refreshBtn" style="margin-top:18px"> רענן</button>
+      ${signedIn()?`<button class="btn ghost big" id="copyResLinkBtn" style="margin-top:10px"> העתק/י קישור לעמוד הזה</button>
+      <button class="btn ghost big" id="teacherBackBtn" style="margin-top:10px"> לכל הכיתות</button>`:''}
       <div class="credit">סוכני הסייבר — משחק בטיחות ברשת</div>
     </div>
   `);
@@ -1675,18 +1676,18 @@ function mapScreen(){
   const allDone = S.done.length===STATIONS.length;
   const pendingReview = allDone && S.weakTopics && S.weakTopics.length>0 && !S.reviewDone;
   const advOn = S.advRound && S.advRound.ci < S.advRound.ids.length;
-  const advLabel = advOn ? `🌟 המשך אתגר מתקדם (${S.advRound.ci}/${S.advRound.ids.length})` : (advancedMaxed() ? '🏆 האתגר המתקדם הושלם' : '🌟 אתגר מתקדם — שאלות קשות יותר');
+  const advLabel = advOn ? `המשך אתגר מתקדם (${S.advRound.ci}/${S.advRound.ids.length})` : (advancedMaxed() ? 'האתגר המתקדם הושלם' : 'אתגר מתקדם — שאלות קשות יותר');
   go(`
     <div class="map-title">
-      <div class="chip" style="--c:var(--cyan)">🗺️ מפת המשימות</div>
-      <h2 style="margin-top:10px">שלום, <span style="color:var(--cyan)">${escapeHtml(S.name)}</span> 👋</h2>
+      <div class="chip" style="--c:var(--c-accent)">מפת המשימות</div>
+      <h2 style="margin-top:10px">שלום, <span style="color:var(--c-accent)">${escapeHtml(S.name)}</span></h2>
       <p class="subtitle">${allDone?('כל הכבוד, '+escapeHtml(S.name)+'! סיימת את כל התחנות 🎖️'):'עבור/י תחנה־תחנה והפוך/הפכי לסוכן/ת מוסמך/ת'}</p>
     </div>
     <div class="map">${nodes}</div>
-    ${returnDue()?`<button class="btn adv-btn big" id="returnRoundBtn" style="margin-top:14px">🔁 משימת חוזר — ${returnRoundSize()} שאלות קצרות</button>`:''}
-    ${allDone? `<button class="btn big" id="certBtn">${pendingReview?'📝 סבב חיזוק קצר לפני התעודה':'🎖️ לתעודת הסוכן/ת'}</button>
+    ${returnDue()?`<button class="btn adv-btn big" id="returnRoundBtn" style="margin-top:14px"> משימת חוזר — ${returnRoundSize()} שאלות קצרות</button>`:''}
+    ${allDone? `<button class="btn big" id="certBtn">${pendingReview?'סבב חיזוק קצר לפני התעודה':'לתעודת הסוכן/ת'}</button>
     <button class="btn adv-btn big" id="advBtn" style="margin-top:10px">${advLabel}</button>
-    ${advOn?`<button class="btn ghost" id="advNewBtn" style="margin-top:8px">🔄 התחל סבב חדש במקום זה</button>`:''}`:''}
+    ${advOn?`<button class="btn ghost" id="advNewBtn" style="margin-top:8px"> התחל סבב חדש במקום זה</button>`:''}`:''}
     <div class="save-note">💾 ההתקדמות שלך נשמרת אוטומטית במכשיר הזה</div>
     <div class="map-footer"><button class="link-btn destructive" id="resetAllBtn">אפס את כל המשחק</button></div>
   `);
@@ -1796,8 +1797,8 @@ function advancedFinaleScreen(){
         <h2 style="margin-top:8px">האתגר המתקדם הושלם!</h2>
         <p class="subtitle">כבר עברת ${roundsPhrase(ADVANCED_ROUND_LIMIT)} של האתגר המתקדם, ${escapeHtml(S.name)} — זו הרמה הגבוהה ביותר במשחק הזה. את/ה יודע/ת לזהות הונאות, לשמור על פרטיות ולחשוב לפני שלוחצים. תמשיכ/י ליישם את זה גם בחיים האמיתיים — זה מה שבאמת חשוב. 🏆💙</p>
         <div class="stat-row"><div class="stat"><b>${S.score}</b><span>נקודות סה"כ</span></div></div>
-        <button class="btn adv-btn big" id="downloadAdvBtn">⬇️ הורד/י תעודת אתגר מתקדם</button>
-        <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
+        <button class="btn adv-btn big" id="downloadAdvBtn">הורד/י תעודת אתגר מתקדם</button>
+        <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה </button>
       </div>`);
   $('#downloadAdvBtn').onclick=()=>{ sfx.click(); downloadAdvancedCertificate(); };
   $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
@@ -1823,9 +1824,9 @@ function renderChallenge(){
   const head=`
     <div class="sticky-head">
       <div class="chal-top">
-        <button class="mini-btn" id="toMapBtn">🗺️ מפה</button>
+        <button class="mini-btn" id="toMapBtn"> מפה</button>
         <div class="chip" style="--c:${st.color}">${icon(st.icon)} ${st.title}${cur.practice?' · תרגול':''}${cur.review?' · חיזוק':''}</div>
-        <button class="mini-btn" id="resetStageBtn">🔄 אפס שלב</button>
+        <button class="mini-btn" id="resetStageBtn"> אפס שלב</button>
       </div>
       <div class="dots">${dots}</div>
     </div>`;
@@ -2003,8 +2004,8 @@ function renderRapid(st,ch,head){
         <div class="scenario">${ch.text}</div>
         <div id="rapidStage"></div>
         <div class="rapid-btns">
-          <button class="btn rapid-btn ok" id="rOk">✅ ${ch.okLabel||'בסדר'}</button>
-          <button class="btn rapid-btn bad" id="rBad">🚫 ${ch.badLabel||'לא בסדר'}</button>
+          <button class="btn rapid-btn ok" id="rOk"> ${ch.okLabel||'בסדר'}</button>
+          <button class="btn rapid-btn bad" id="rBad"> ${ch.badLabel||'לא בסדר'}</button>
         </div>
       </div>`);
   const stage=$('#rapidStage');
@@ -2043,7 +2044,7 @@ function renderSort(st,ch,head){
           <div class="bin binL" data-bin="0"><h4>${ch.binL}</h4><div class="drop" id="d0"></div></div>
           <div class="bin binR" data-bin="1"><h4>${ch.binR}</h4><div class="drop" id="d1"></div></div>
         </div>
-        <button class="btn big" id="checkBtn" style="margin-top:16px" disabled>בדוק/י ✔</button>      </div>`);
+        <button class="btn big" id="checkBtn" style="margin-top:16px" disabled>בדוק/י </button>      </div>`);
   document.querySelectorAll('.bin').forEach(bin=> bin.onclick=()=>placeSelected(+bin.dataset.bin, st, ch));
   $('#checkBtn').onclick=()=>checkSort(st,ch);
   drawSort(st);
@@ -2183,7 +2184,7 @@ function showFeedback(good, text, onNext, pts, bonus, streakCount){
       <div class="fb-emoji">${good?icon('check'):icon('lightbulb')}</div>
       <div class="fb-title">${title}</div>
       <div class="fb-text">${text}</div>
-      <button class="btn big" id="fbBtn" style="margin-top:16px">${good?'המשך ▶':'נסה/י שוב 🔁'}</button>
+      <button class="btn big" id="fbBtn" style="margin-top:16px">${good?'המשך':'נסה/י שוב'}</button>
     </div>`;
   document.body.appendChild(ov);
   ov.querySelector('#fbBtn').onclick=()=>{ sfx.click(); ov.remove(); if(onNext) onNext(); };
@@ -2202,8 +2203,8 @@ function stationFailed(st){
         <h2 style="margin-top:8px">נגמרו החיים בתחנה זו</h2>
         <p class="subtitle">זה בסדר גמור, ${escapeHtml(S.name)} — סוכנים לומדים מניסיון! נמשיך בדיוק מהשאלה שנעצרת בה.</p>
         <div class="chip" style="--c:${st.color};margin-top:12px">${icon(st.icon)} ${st.title}</div>
-        <button class="btn big" id="retryBtn">ממשיכים 🔁</button>
-        <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
+        <button class="btn big" id="retryBtn">ממשיכים </button>
+        <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה </button>
       </div>`);
   $('#retryBtn').onclick=()=>{ sfx.click(); wasAdvanced?startAdvanced():wasReturn?startReturnRound():wasReview?startReviewRound():startStation(si); };
   $('#backBtn').onclick=()=>{ sfx.click(); mapScreen(); };
@@ -2217,7 +2218,7 @@ function stationComplete(st){
           <h2 style="margin-top:8px">זכרת, ${escapeHtml(S.name)}!</h2>
           <p class="subtitle">זה החלק שהכי קשה — לזכור את זה גם כמה ימים אחרי. בדיוק בשביל זה חזרנו. 💪</p>
           <div class="stat-row"><div class="stat"><b>${S.score}</b><span>נקודות</span></div></div>
-          <button class="btn big" id="contBtn" style="margin-top:14px">חזרה למפה 🗺️</button>
+          <button class="btn big" id="contBtn" style="margin-top:14px">חזרה למפה </button>
         </div>`);
     $('#contBtn').onclick=()=>{ sfx.click(); mapScreen(); };
     return;
@@ -2229,7 +2230,7 @@ function stationComplete(st){
           <div class="badge-pop" style="color:var(--green)">${icon('check')}</div>
           <h2 style="margin-top:8px">מעולה, ${escapeHtml(S.name)}!</h2>
           <p class="subtitle">חיזקת בדיוק את הנושאים שהיו קצת יותר מאתגרים — עכשיו הכול ברור, ומגיעה לך התעודה 🎓</p>
-          <button class="btn big" id="contBtn">🎖️ לתעודת הסוכן/ת</button>
+          <button class="btn big" id="contBtn"> לתעודת הסוכן/ת</button>
         </div>`);
     $('#contBtn').onclick=()=>{ sfx.click(); certScreen(); };
     return;
@@ -2253,9 +2254,9 @@ function stationComplete(st){
           ${firstTime?`<div style="font-size:20px;font-weight:800;margin-top:6px">מומחה/ית סייבר 🌟</div>`:''}
           <p class="subtitle">${praise}</p>
           <div class="stat-row"><div class="stat"><b>+${earned}</b><span>נק' בסבב</span></div><div class="stat"><b>${S.score}</b><span>סה"כ</span></div></div>
-          ${maxed?'<button class="btn adv-btn big" id="downloadAdvBtn">⬇️ הורד/י תעודת אתגר מתקדם</button>':''}
-          ${maxed?'':'<button class="btn big" id="advAgainBtn" style="margin-top:10px">🌟 סבב אתגר נוסף</button>'}
-          <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה 🗺️</button>
+          ${maxed?'<button class="btn adv-btn big" id="downloadAdvBtn">הורד/י תעודת אתגר מתקדם</button>':''}
+          ${maxed?'':'<button class="btn big" id="advAgainBtn" style="margin-top:10px"> סבב אתגר נוסף</button>'}
+          <button class="btn ghost big" id="backBtn" style="margin-top:10px">חזרה למפה </button>
         </div>`);
     const dab=$('#downloadAdvBtn'); if(dab) dab.onclick=()=>{ sfx.click(); downloadAdvancedCertificate(); };
     if(!maxed) $('#advAgainBtn').onclick=()=>{ sfx.click(); startAdvanced(); };
@@ -2268,7 +2269,7 @@ function stationComplete(st){
           <div class="badge-pop">${icon(st.icon)}</div>
           <h2 style="margin-top:8px">כל הכבוד, ${escapeHtml(S.name)}!</h2>
           <p class="subtitle">השלמת שוב את «${st.title}» — תרגול מצוין 💪</p>
-          <button class="btn big" id="contBtn">חזרה למפה 🗺️</button>
+          <button class="btn big" id="contBtn">חזרה למפה </button>
         </div>`);
     $('#contBtn').onclick=()=>{ sfx.click(); mapScreen(); };
     return;
@@ -2293,7 +2294,7 @@ function stationComplete(st){
         ${fastPath?`<div class="fast-note">💨 בלי טעות אחת — דילגנו על שאר השאלות של העולם הזה</div>`:''}
         <div class="recap-title">💡 הדבר לזכור מהעולם הזה</div>
         <p class="takeaway">${takeaway}</p>
-        <button class="btn big" id="contBtn">${allDone?'🎖️ לתעודה הסופית':'המשך למפה ▶'}</button>
+        <button class="btn big" id="contBtn">${allDone?'לתעודה הסופית':'המשך למפה'}</button>
       </div>`);
   $('#contBtn').onclick=()=>{ sfx.click(); allDone?goToCertOrReview():mapScreen(); };
 }
@@ -2334,7 +2335,7 @@ function returnIntroScreen(){
         <h2 style="margin-top:8px" class="neon">טוב לראות אותך, ${escapeHtml(S.name)}!</h2>
         <p class="subtitle">עברו ${days} ימים מאז ששיחקת. ${count} שאלות קצרות כדי לבדוק מה נשאר —
         חלקן דברים שפספסת, וחלקן שאלות שעוד לא ראית.</p>
-        <button class="btn big" id="returnBtn" style="margin-top:16px">יאללה, בואו נבדוק ▶</button>
+        <button class="btn big" id="returnBtn" style="margin-top:16px">יאללה, בואו נבדוק </button>
         <button class="btn ghost big" id="skipReturnBtn" style="margin-top:10px">אולי אחר כך</button>
       </div>`);
   $('#returnBtn').onclick=()=>{ sfx.click(); startReturnRound(); };
@@ -2361,7 +2362,7 @@ function reviewIntroScreen(){
         <p class="subtitle">לפני התעודה, בואו נחזור בקצרה על ${topics.length>1?'הנושאים':'הנושא'} שהיו לך קצת יותר מאתגרים —
         עם שאלות חדשות, כדי לוודא שהכול ברור:</p>
         <div style="margin-top:10px">${chips}</div>
-        <button class="btn big" id="reviewBtn" style="margin-top:16px">בואו נבדוק! ▶</button>
+        <button class="btn big" id="reviewBtn" style="margin-top:16px">בואו נבדוק! </button>
       </div>`);
   $('#reviewBtn').onclick=()=>{ sfx.click(); startReviewRound(); };
 }
@@ -2489,9 +2490,9 @@ function certScreen(){
         </div>
         <p class="subtitle" style="margin-top:8px">עכשיו את/ה יודע/ת לשמור על עצמך ועל חברים ברשת. שתף/י את מה שלמדת! 💙</p>
         <div class="print-date">${new Date().toLocaleDateString('he-IL')}</div>
-        <button class="btn adv-btn big no-print" id="downloadBtn" style="margin-top:14px">⬇️ הורד/י תעודה כתמונה</button>
-        <button class="btn big no-print" id="advBtn2" style="margin-top:10px">${advancedMaxed()?'🏆 האתגר המתקדם הושלם':'🌟 מוכן/ה לאתגר מתקדם? שאלות קשות יותר'}</button>
-        <button class="btn ghost big no-print" id="againBtn" style="margin-top:10px">שחק/י שוב מההתחלה 🔄</button>
+        <button class="btn adv-btn big no-print" id="downloadBtn" style="margin-top:14px">הורד/י תעודה כתמונה</button>
+        <button class="btn big no-print" id="advBtn2" style="margin-top:10px">${advancedMaxed()?'האתגר המתקדם הושלם':'מוכן/ה לאתגר מתקדם? שאלות קשות יותר'}</button>
+        <button class="btn ghost big no-print" id="againBtn" style="margin-top:10px">שחק/י שוב מההתחלה </button>
         <div class="credit">נוצר ע"י אלון ואורי מרקוביץ</div>
       </div>`);
   $('#downloadBtn').onclick=()=>{
