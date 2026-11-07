@@ -280,6 +280,14 @@
   @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}60%{transform:translateX(8px)}}
 
   /* ---------- Feedback modal (always visible, never off-screen) ---------- */
+  .test-bar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;
+    padding:calc(6px + env(safe-area-inset-top)) 8px 6px;background:#2a1600;border-bottom:2px solid var(--orange)}
+  .test-bar button{background:#0a1128;color:var(--ink);border:1px solid var(--orange);border-radius:10px;padding:6px 10px;
+    font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+  .test-bar.busy button{opacity:.5;pointer-events:none}
+  .test-tag{color:var(--orange);font-weight:900;font-size:13px}
+  body.test-mode #app{padding-top:calc(62px + env(safe-area-inset-top))}
+  @media (max-width:520px){ body.test-mode #app{padding-top:calc(92px + env(safe-area-inset-top))} }
   .fb-overlay{position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end;justify-content:center;
     background:rgba(4,8,20,.55);backdrop-filter:blur(3px);animation:fadein .2s;
     padding:12px 12px calc(14px + env(safe-area-inset-bottom))}
@@ -945,7 +953,10 @@ const ADVANCED = [
 const RANKS = ['מתלמד/ת','סוכן/ת זוטר/ה','סוכן/ת','סוכן/ת מנוסה','סוכן/ת בכיר/ה','סוכן/ת מומחה/ית','סוכן/ת על 🏆'];
 const TOTAL = STATIONS.reduce((n,s)=>n+s.challenges.length,0);
 const LIVES = 3;
-const SAVE_KEY = 'cyberAgentsSave';
+// Test mode exists only on a device signed in to class management, so a child who adds &test=1
+// to a class link gets the ordinary game. It plays into a separate save of its own.
+const TEST_MODE = (()=>{ try{ return new URLSearchParams(location.search).has('test') && !!localStorage.getItem('cyberAgentsTeacherCode'); }catch(e){ return false; } })();
+const SAVE_KEY = TEST_MODE ? 'cyberAgentsSaveTest' : 'cyberAgentsSave';
 
 /* ---------- classroom mode (optional, opt-in — only touches the network if a class code is used) ----------
    Talks directly to Supabase's REST API (PostgREST) with plain fetch — no SDK, keeps the app dependency-free.
@@ -1484,6 +1495,7 @@ async function renderMyClassesList(){
       <div class="myclass-actions">
         <button class="mini-btn" data-link="${escapeHtml(c.code)}">📋 קישור</button>
         <button class="mini-btn" data-res="${escapeHtml(c.code)}">📊 תוצאות</button>
+        <button class="mini-btn" data-test="${escapeHtml(c.code)}" title="פתיחת המשחק במצב בדיקה לכיתה הזו">🧪</button>
         <button class="myclass-del" data-del="${escapeHtml(c.code)}" title="מחיקת הכיתה" aria-label="מחיקת הכיתה ${escapeHtml(c.name||'')}">🗑️</button>
       </div>
     </div>`).join('')}</div>`;
@@ -1499,6 +1511,10 @@ async function renderMyClassesList(){
   wrap.querySelectorAll('[data-link]').forEach(b=>{
     b.onclick=(e)=>{ e.stopPropagation(); sfx.click();
       const c=mine.find(x=>x.code===b.dataset.link); copyText(studentLinkFor(c), b); };
+  });
+  wrap.querySelectorAll('[data-test]').forEach(b=>{
+    b.onclick=(e)=>{ e.stopPropagation(); sfx.click();
+      const c=mine.find(x=>x.code===b.dataset.test); window.open(studentLinkFor(c)+'&test=1','_blank'); };
   });
   wrap.querySelectorAll('[data-res]').forEach(b=>{
     b.onclick=(e)=>{ e.stopPropagation(); sfx.click(); classResultsScreen(b.dataset.res); };
@@ -1816,6 +1832,7 @@ function renderChallenge(){
 
 function renderQuiz(st,ch,head){
   const order=shuffle(ch.options.map((_,i)=>i));            // randomize option order every time it's shown
+  cur._order=order;
   const opts=order.map((origIdx,pos)=>`<button class="opt" data-i="${pos}" style="--c:${st.color}">${ch.options[origIdx]}</button>`).join('');
   go(`<div class="card" style="--c:${st.color}">
         ${head}
@@ -1856,6 +1873,7 @@ function answerQuiz(pos, st, ch, order){
    with that consequence already seen. */
 function renderChat(st,ch,head){
   let turn=0, locked=false;
+  cur._chatTurn=()=>turn;
   const log=[];
   go(`<div class="card" style="--c:${st.color}">
         ${head}
@@ -1961,6 +1979,7 @@ function renderSpot(st,ch,head){
    on rather than restarting. */
 function renderRapid(st,ch,head){
   const cards=shuffle(ch.cards.slice());
+  cur._rapidCard=()=>cards[i];
   // Taps keep landing while the feedback modal is up and after the last card is answered —
   // a double-tap on the final card is enough. Both are ignored rather than read past the end.
   let i=0, locked=false;
@@ -2509,6 +2528,99 @@ window.addEventListener('error', ()=>{
   if(document.querySelector('.fb-overlay')) return; // don't fight an open feedback modal
   try{ mapScreen(); }catch(e){ try{ startScreen(); }catch(e2){} }
 });
+
+/* ---------- test mode (?class=CODE&test=1, owner's device only) ----------
+   A quick way to run a whole class through the game and check that progress and results come
+   out right, without answering 36 questions by hand. It plays the real game — the same screens,
+   scoring and sync — so what lands in the class results is exactly what a real player produces.
+   It keeps its own save, so it never touches a game played normally on the same device. */
+const tsleep=ms=>new Promise(r=>setTimeout(r,ms));
+let testBusy=false;
+// Answers the challenge on screen. A correct answer also clicks through its feedback, so one tap
+// moves to the next question; a wrong one leaves the explanation up so it can be read.
+async function testAnswer(correct){
+  const fbb=$('#fbBtn'); if(fbb){ fbb.click(); await tsleep(120); if(!correct) return; }
+  // Between challenges (a badge, the out-of-lives screen, onboarding) the same tap just moves on.
+  if(!$('#toMapBtn')){
+    const next=$('#retryBtn')||$('#contBtn')||$('#onboardBtn')||$('#reviewBtn');
+    if(correct && next){ next.click(); await tsleep(150); }
+    return;
+  }
+  if(!cur) return;
+  const st=curStation(), ch=st.challenges[cur.ci]; if(!ch) return;
+  if(ch.type==='quiz'){
+    const btns=[...document.querySelectorAll('#opts .opt')]; if(!btns.length || btns[0].disabled) return;
+    const right=cur._order.indexOf(ch.answer);
+    const pos = correct ? right : btns.findIndex((_,i)=>i!==right);
+    btns[pos].click();
+  } else if(ch.type==='sort'){
+    const s=cur._sort;
+    s.items.forEach((it,k)=>{ it.placed = correct ? it.bin : (k===0 ? 1-it.bin : it.bin); });
+    s.selected=null; drawSort(st); $('#checkBtn').click();
+  } else if(ch.type==='spot'){
+    const parts=[...document.querySelectorAll('.spot-part')];
+    if(!correct){ const ok=parts.find(p=>!ch.parts[+p.dataset.i].bad); if(ok) ok.click(); }
+    else for(const p of parts){ if(ch.parts[+p.dataset.i].bad && !p.classList.contains('hit')){ p.click(); await tsleep(40); } }
+  } else if(ch.type==='rapid'){
+    if(!correct){ const c=cur._rapidCard(); if(c) $(c.ok?'#rBad':'#rOk').click(); }
+    else { for(let n=0;n<ch.cards.length;n++){ const c=cur._rapidCard(); if(!c) break; $(c.ok?'#rOk':'#rBad').click(); await tsleep(40); } }
+  } else if(ch.type==='chat'){
+    for(let t=0;t<ch.turns.length;t++){
+      const turn=cur._chatTurn(); const opts=[...document.querySelectorAll('.chat-opt')]; if(!opts.length) break;
+      const pick=opts.find(b=>!!ch.turns[turn].options[+b.dataset.i].good===correct);
+      if(!pick) break;
+      pick.click();
+      if(!correct) return;
+      await tsleep(900);
+      if(!cur || $('#fbBtn')) break;
+    }
+  }
+  if(correct){ for(let k=0;k<20;k++){ const b=$('#fbBtn'); if(b){ b.click(); await tsleep(120); break; } await tsleep(50); } }
+}
+// Plays the current world to its end with correct answers.
+function testEnsurePlayer(){
+  if(!S.name || S.name==='סוכן/ת'){ S.name='בודק/ת '+Math.floor(100+Math.random()*900); }
+  S.onboarded=true; save();
+}
+async function testFinishWorld(){
+  testEnsurePlayer();
+  if(!cur){ const i=firstIncomplete(); if(i<0) return; startStation(i); await tsleep(150); }
+  const sid=curStation() && curStation().id;
+  for(let g=0; g<40 && cur && curStation() && curStation().id===sid; g++) await testAnswer(true);
+}
+async function testFinishAll(){
+  testEnsurePlayer();
+  for(let g=0; g<STATIONS.length+1; g++){
+    // Carry on with the world already open, so its mistakes still count toward weak topics.
+    if(!(cur && $('#toMapBtn'))){ const i=firstIncomplete(); if(i<0) break; startStation(i); await tsleep(150); }
+    await testFinishWorld();
+  }
+  mapScreen();
+}
+function testNewPlayer(){
+  if(!confirm('להתחיל שחקן/ית בדיקה חדש/ה? הוא/היא ייספר/תיספר בכיתה כמשתתף/ת נוסף/ת.')) return;
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  location.reload();
+}
+function mountTestBar(){
+  document.body.classList.add('test-mode');
+  const bar=document.createElement('div'); bar.className='test-bar';
+  bar.innerHTML=`
+    <span class="test-tag">🧪 בדיקה</span>
+    <button data-t="ok">✅ ענה נכון</button>
+    <button data-t="bad">❌ טעות</button>
+    <button data-t="world">⏭️ סיים עולם</button>
+    <button data-t="all">🏁 סיים הכול</button>
+    <button data-t="new">👤 שחקן חדש</button>`;
+  document.body.appendChild(bar);
+  const run=async(fn)=>{ if(testBusy) return; testBusy=true; bar.classList.add('busy'); try{ await fn(); }catch(e){ console.error(e); } finally{ testBusy=false; bar.classList.remove('busy'); } };
+  bar.querySelector('[data-t=ok]').onclick=()=>run(()=>testAnswer(true));
+  bar.querySelector('[data-t=bad]').onclick=()=>run(()=>testAnswer(false));
+  bar.querySelector('[data-t=world]').onclick=()=>run(testFinishWorld);
+  bar.querySelector('[data-t=all]').onclick=()=>run(testFinishAll);
+  bar.querySelector('[data-t=new]').onclick=testNewPlayer;
+}
+if(TEST_MODE) mountTestBar();
 
 /* ---------- boot ---------- */
 (function boot(){
