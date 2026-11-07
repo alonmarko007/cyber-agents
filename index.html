@@ -94,22 +94,30 @@
   button{font-family:inherit;cursor:pointer;border:none;color:inherit}
   .icon{width:1em;height:1em;flex-shrink:0}
 
-  /* ---------- HUD ---------- */
-  #hud{display:none;flex-shrink:0;gap:10px;align-items:center;justify-content:space-between;
-       background:var(--panel);border:1px solid var(--line);border-radius:16px;
-       padding:10px 12px;backdrop-filter:blur(6px);margin-bottom:10px;flex-wrap:wrap}
-  .hud-rank{font-weight:800;font-size:14px;color:var(--cyan)}
-  .hud-rank small{display:block;color:var(--muted);font-weight:600;font-size:11px}
-  .hearts{font-size:20px;letter-spacing:2px;filter:drop-shadow(0 0 6px rgba(255,77,109,.6))}
-  .hud-score{font-weight:900;font-size:20px;color:var(--yellow)}
-  .hud-score small{font-size:11px;color:var(--muted);font-weight:700}
+  /* ---------- HUD (Apple HIG) ---------- */
+  #hud{display:none;flex-shrink:0;gap:var(--sp-3);align-items:center;justify-content:space-between;flex-wrap:wrap;
+       margin-bottom:var(--sp-3);padding:var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-4);border-radius:var(--r-xl);color:var(--c-label);
+       background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+       border:1px solid var(--c-hairline)}
+  .hud-rank{font-weight:var(--fw-semibold);font-size:var(--fs-subhead);color:var(--c-label);line-height:1.25}
+  .hud-rank small{display:block;color:var(--c-label-2);font-weight:var(--fw-regular);font-size:var(--fs-caption)}
+  .hearts{display:flex;gap:3px;font-size:20px}
+  .hearts .life{color:var(--c-danger);display:grid;transition:transform var(--dur-fast) var(--ease-spring)}
+  .hearts .life.lost{color:var(--c-label-3)}
+  .hud-score{font-weight:var(--fw-bold);font-size:var(--fs-title3);color:var(--c-label);font-variant-numeric:tabular-nums}
+  .hud-score small{font-size:var(--fs-caption);color:var(--c-label-2);font-weight:var(--fw-regular)}
   .xpwrap{flex:1 1 140px;min-width:120px}
-  .xpbar{height:10px;border-radius:99px;background:#0a1128;border:1px solid var(--line);overflow:hidden}
-  .xpfill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--purple));
-          box-shadow:0 0 12px var(--cyan);transition:width .5s cubic-bezier(.2,.8,.2,1)}
-  .xplabel{font-size:10px;color:var(--muted);margin-top:3px;text-align:center}
-  #muteBtn{background:#0a1128;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:16px;
-           min-width:44px;min-height:44px;display:grid;place-items:center}
+  .xpbar{height:6px;border-radius:var(--r-full);background:var(--c-fill);overflow:hidden}
+  .xpfill{height:100%;width:0;border-radius:var(--r-full);background:var(--c-accent);
+          transition:width var(--dur-slow) var(--ease-default)}
+  .xplabel{font-size:var(--fs-caption);color:var(--c-label-2);margin-top:4px;text-align:center}
+  #muteBtn{width:var(--touch-min);height:var(--touch-min);border-radius:50%;background:var(--c-fill);color:var(--c-label);
+           font-size:20px;display:grid;place-items:center;transition:transform var(--dur-instant) var(--ease-out)}
+  #muteBtn:active{transform:scale(.94)}
+  #muteBtn:focus-visible{outline:none;box-shadow:0 0 0 4px var(--c-accent-ring)}
+  #screen{scrollbar-width:thin;scrollbar-color:var(--c-separator) transparent}
+  #screen::-webkit-scrollbar{width:8px}
+  #screen::-webkit-scrollbar-thumb{background:var(--c-separator);border-radius:4px}
 
   /* ---------- Shared surfaces (Apple HIG, tokens in theme.css) ---------- */
   .card{background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
@@ -485,13 +493,13 @@
 <div id="app">
   <div id="hud">
     <div class="hud-rank" id="hudRank">מתלמד/ת<small>סוכני הסייבר</small></div>
-    <div class="hearts" id="hudHearts">❤️❤️❤️</div>
+    <div class="hearts" id="hudHearts" role="img" aria-label="3 חיים מתוך 3"></div>
     <div class="xpwrap">
       <div class="xpbar"><div class="xpfill" id="xpFill"></div></div>
       <div class="xplabel" id="xpLabel">0 / 27 משימות</div>
     </div>
     <div class="hud-score"><span id="hudScore">0</span><small> נק'</small></div>
-    <button id="muteBtn" title="צליל" aria-label="השתקת צליל">🔊</button>
+    <button id="muteBtn" title="צליל" aria-label="השתקת צליל"></button>
   </div>
   <div id="screen"></div>
 </div>
@@ -1096,9 +1104,13 @@ const ICON_PATHS = {
   check:     '<circle cx="12" cy="12" r="9"/><path d="M7.8 12.3 10.6 15 16.3 8.8"/>',
   lightbulb: '<path d="M12 3.2a5.8 5.8 0 0 0-3.1 10.7c.5.4.8 1 .8 1.6v.7h4.6v-.7c0-.6.3-1.2.8-1.6A5.8 5.8 0 0 0 12 3.2z"/><path d="M9.7 18.5h4.6M10.4 21h3.2"/>',
   crackedheart:'<path d="M12 20s-7-4.4-7-9.8A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 7 3.2c0 5.4-7 9.8-7 9.8z"/><path d="M12.8 7.5 10.5 11l2 1.6-1.7 3.4"/>',
+  heart:     '<path d="M12 20.3s-7.6-4.6-7.6-10.3A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 7.6 2.8c0 5.7-7.6 10.3-7.6 10.3z"/>',
+  speaker:   '<path d="M4 9.5h3.2L11.5 6v12l-4.3-3.5H4z"/><path d="M15 9.2a4 4 0 0 1 0 5.6M17.6 6.8a7.4 7.4 0 0 1 0 10.4"/>',
+  speakerOff:'<path d="M4 9.5h3.2L11.5 6v12l-4.3-3.5H4z"/><path d="m15.5 9.5 5 5M20.5 9.5l-5 5"/>',
   trophy:    '<path d="M7 4h10v4.2c0 3-2.2 5.3-5 5.6-2.8-.3-5-2.6-5-5.6V4z"/><path d="M7 5H4.5a2 2 0 0 0 0 4H7M17 5h2.5a2 2 0 0 1 0 4H17"/><path d="M12 13.8V17M9 20.5h6M9.5 20.5c0-1.8.9-2.8 2.5-2.8s2.5 1 2.5 2.8"/>'
 };
 const ICON_FILL_PATHS = {
+  heartFill: '<path d="M12 20.3s-7.6-4.6-7.6-10.3A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 7.6 2.8c0 5.7-7.6 10.3-7.6 10.3z"/>',
   star: '<path d="M12 3.5l2.4 5.3 5.8.6-4.4 3.9 1.3 5.7L12 15.9 6.9 19l1.3-5.7-4.4-3.9 5.8-.6L12 3.5z"/>'
 };
 function icon(key){
@@ -1206,13 +1218,18 @@ function rankIndex(){ return Math.min(S.done.length, RANKS.length-1); }
 function updateHUD(){
   hud.style.display='flex';
   $('#hudScore').textContent=S.score;
-  $('#hudRank').innerHTML = RANKS[rankIndex()] + '<small>'+(S.name?('🕵️ '+escapeHtml(S.name)):'סוכני הסייבר')+'</small>';
+  $('#hudRank').innerHTML = RANKS[rankIndex()] + '<small>'+(S.name?escapeHtml(S.name):'סוכני הסייבר')+'</small>';
   const doneCount = countDone();
   $('#xpFill').style.width = (doneCount/TOTAL*100)+'%';
-  $('#xpLabel').textContent = doneCount+' / '+TOTAL+' משימות';
-  $('#muteBtn').textContent = S.muted ? '🔇' : '🔊';
+  $('#xpLabel').innerHTML = '<span class="num">'+doneCount+' / '+TOTAL+'</span> משימות';
+  $('#muteBtn').innerHTML = icon(S.muted ? 'speakerOff' : 'speaker');
   $('#muteBtn').setAttribute('aria-label', S.muted ? 'הפעלת צליל' : 'השתקת צליל');
-  if(cur){ $('#hudHearts').textContent = '❤️'.repeat(cur.lives)+'🖤'.repeat(LIVES-cur.lives); $('#hudHearts').style.visibility='visible'; }
+  if(cur){
+    const h=$('#hudHearts');
+    h.innerHTML = Array.from({length:LIVES},(_,i)=>`<span class="${i<cur.lives?'life':'life lost'}">${icon(i<cur.lives?'heartFill':'heart')}</span>`).join('');
+    h.setAttribute('aria-label', `${cur.lives} חיים מתוך ${LIVES}`);
+    h.style.visibility='visible';
+  }
   else { $('#hudHearts').style.visibility='hidden'; }
 }
 function countDone(){
