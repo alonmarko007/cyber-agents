@@ -235,40 +235,38 @@
   .new-class .btn{width:auto;margin:0;padding:12px 16px;flex-shrink:0}
   .myclass-count{font-weight:900;font-size:13px;color:var(--cyan);white-space:nowrap}
 
-  /* ---------- Map ---------- */
-  .map-title{text-align:center;margin-bottom:6px}
-  .map{position:relative;margin:16px 0}
-  .station{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);
-    border-radius:20px;padding:14px 16px;margin:0;position:relative;transition:transform .1s;
-    border-inline-start:6px solid var(--c)}
-  .station.playable{cursor:pointer;box-shadow:0 0 0 1px var(--c),0 0 26px -6px var(--c)}
-  .station.playable:active{transform:scale(.98)}
-  .station.locked{opacity:.5;filter:grayscale(.4)}
-  .station.done{}
-  .st-emoji{font-size:30px;width:60px;height:60px;flex:0 0 60px;display:grid;place-items:center;
-    background:#0a1128;border-radius:16px;border:1px solid var(--line);position:relative;z-index:1;
-    color:var(--c);filter:drop-shadow(0 0 5px var(--c))}
+  /* ---------- Map (Apple HIG) ---------- */
+  .map-title{text-align:center;margin-bottom:var(--sp-2)}
+  .map-title h2{font-size:var(--fs-title1);font-weight:var(--fw-bold);color:var(--c-label)}
+  .map-title h2 span{color:var(--c-accent)!important}
+  .map{position:relative;margin:var(--sp-4) 0}
+  .station{display:flex;align-items:center;gap:var(--sp-4);margin:0;position:relative;min-height:76px;
+    padding:var(--sp-3) var(--sp-4);border-radius:var(--r-xl);color:var(--c-label);
+    background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+    border:1px solid var(--c-hairline);transition:transform var(--dur-instant) var(--ease-out),border-color var(--dur-fast) var(--ease-out)}
+  .station.locked{opacity:.45}
+  /* the world you play next is the one thing on the map marked in the accent */
+  .station.next{border-color:var(--c-accent);box-shadow:0 0 0 1px var(--c-accent),0 12px 30px rgba(48,213,200,.14)}
+  .st-emoji{font-size:26px;width:52px;height:52px;flex:0 0 52px;display:grid;place-items:center;border-radius:14px;
+    position:relative;z-index:1;color:var(--c);background:color-mix(in srgb, var(--c) 16%, transparent)}
   .st-body{flex:1;min-width:0}
-  .st-body h3{font-size:17px;color:var(--c)}
-  .st-body p{margin:3px 0 0;color:var(--muted);font-size:13px}
-  .st-badge{font-size:26px;color:var(--c);filter:drop-shadow(0 0 8px var(--c))}
-  .st-lock{font-size:20px;color:var(--muted)}
-  .st-play{font-weight:900;color:var(--c);font-size:14px;white-space:nowrap}
-  /* connecting trail between stations: mirrors .station's box model (border-inline-start + padding)
-     so the line lands exactly under the icon column, regardless of card height/text wrap */
-  .path-seg{display:flex;height:26px;box-sizing:border-box;
-    border-inline-start:6px solid transparent;padding-inline:16px}
-  .path-seg-track{flex:0 0 60px;display:flex;justify-content:center}
-  .path-seg-line{width:4px;border-radius:2px;background:
-     repeating-linear-gradient(var(--line),var(--line) 5px,transparent 5px,transparent 10px)}
-  .path-seg-line.filled{background:var(--c);box-shadow:0 0 10px -2px var(--c)}
-  @keyframes pulse{0%,100%{box-shadow:0 0 0 1px var(--c),0 0 26px -6px var(--c)}
-                   50%{box-shadow:0 0 0 2px var(--c),0 0 34px 0px var(--c)}}
-  .station.next{animation:pulse 1.6s infinite}
+  .st-body h3{font-size:var(--fs-body);font-weight:var(--fw-semibold);color:var(--c-label)}
+  .st-body p{margin:2px 0 0;color:var(--c-label-2);font-size:var(--fs-footnote);line-height:1.4}
+  .st-badge{font-size:22px;color:var(--c-success);display:grid;place-items:center}
+  .st-lock{font-size:18px;color:var(--c-label-2)}
+  .st-play{display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:0 var(--sp-3);border-radius:var(--r-full);
+    background:var(--c-accent);color:var(--c-on-accent);font-weight:var(--fw-semibold);font-size:var(--fs-footnote);white-space:nowrap}
+  /* connecting trail: mirrors .station's padding so the line sits under the icon column */
+  .path-seg{display:flex;height:18px;box-sizing:border-box;padding-inline:calc(var(--sp-4) + 1px)}
+  .path-seg-track{flex:0 0 52px;display:flex;justify-content:center}
+  .path-seg-line{width:2px;border-radius:1px;background:var(--c-separator)}
+  .path-seg-line.filled{background:var(--c-accent)}
   .station.clickable{cursor:pointer}
   .station.clickable:active{transform:scale(.985)}
-  .map-footer{text-align:center;margin-top:6px}
-  .save-note{text-align:center;color:var(--muted);font-size:11px;margin-top:14px;opacity:.75}
+  @media (hover: hover) and (pointer: fine){ .station.clickable:hover{border-color:rgba(255,255,255,.2)} .station.next:hover{border-color:var(--c-accent)} }
+  .map-footer{text-align:center;margin-top:var(--sp-2)}
+  .link-btn.destructive{color:var(--c-danger)}
+  .save-note{text-align:center;color:var(--c-label-2);font-size:var(--fs-caption);margin-top:var(--sp-4)}
   .sticky-head{position:sticky;top:0;z-index:5;margin:-20px -20px 14px;padding:14px 20px 10px;
        background:var(--panel);backdrop-filter:blur(8px);border-radius:20px 20px 0 0;
        box-shadow:0 10px 14px -10px rgba(0,0,0,.35)}
@@ -459,7 +457,6 @@
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
       transition-duration:.001ms!important;scroll-behavior:auto!important}
-    .station.next{animation:none;box-shadow:0 0 0 2px var(--c),0 0 26px -6px var(--c)}
     .agent-emoji{animation:none}
   }
 
@@ -1654,10 +1651,10 @@ function mapScreen(){
     const n=st.challenges.length;
     const partial = (!done && S.partial[st.id]) ? S.partial[st.id] : 0;
     let right, sub;
-    if(done){ right=`<div class="st-badge">${icon(st.icon)}</div>`; sub='✔ הושלם · '+st.badgeName+' · הקש/י לתרגול 🔁'; }
+    if(done){ right=`<div class="st-badge" aria-label="הושלם">${icon('check')}</div>`; sub='הושלם · '+st.badgeName+' · הקש/י לתרגול'; }
     else if(playable){
-      right=`<div class="st-play">${partial?('המשך '+partial+'/'+n):'שחק'} ▶</div>`;
-      sub = partial ? ('בתהליך · '+partial+'/'+n+' הושלמו') : 'התחנה הבאה שלך';
+      right=`<div class="st-play">${partial?('המשך <span class="num">'+partial+'/'+n+'</span>'):'שחק'}</div>`;
+      sub = partial ? ('בתהליך · <span class="num">'+partial+'/'+n+'</span> הושלמו') : 'התחנה הבאה שלך';
     } else { right=`<div class="st-lock">${icon('lock')}</div>`; sub='ננעל — סיים/י את הקודמת'; }
     const clickable = done || playable;
     nodes += `
@@ -1690,7 +1687,7 @@ function mapScreen(){
     <button class="btn adv-btn big" id="advBtn" style="margin-top:10px">${advLabel}</button>
     ${advOn?`<button class="btn ghost" id="advNewBtn" style="margin-top:8px">🔄 התחל סבב חדש במקום זה</button>`:''}`:''}
     <div class="save-note">💾 ההתקדמות שלך נשמרת אוטומטית במכשיר הזה</div>
-    <div class="map-footer"><button class="btn ghost" id="resetAllBtn">🗑️ אפס את כל המשחק</button></div>
+    <div class="map-footer"><button class="link-btn destructive" id="resetAllBtn">אפס את כל המשחק</button></div>
   `);
   document.querySelectorAll('.station.clickable').forEach(el=>{
     el.onclick=()=>{ sfx.click(); startStation(+el.dataset.i); };
